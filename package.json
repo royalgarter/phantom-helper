@@ -1,0 +1,35 @@
+{
+  "author": {
+    "name": "Tung Pham Thanh",
+    "url": "royalgarter@gmail.com"
+  },
+  "name": "phantom-helper",
+  "description": "Helper for PhantomJS with Node.js with plenty of handy functions",
+  "version": "1.0.5",
+  "homepage": "https://github.com/royalgarter/phantom-helper",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/royalgarter/phantom-helper.git"
+  },
+  "main": "PhantomHelper.js",
+  "scripts": {
+    "test": "./test"
+  },
+  "dependencies": {
+    "node-phantom-simple": "*"
+  },
+  "devDependencies": {
+    "wait.for": "*"
+  },
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  },
+  "readme": "",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/royalgarter/phantom-helper/issues"
+  },
+  "_id": "phantom-helper@1.0.5",
+  "_from": "phantom-helper@*"
+}

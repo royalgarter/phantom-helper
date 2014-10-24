@@ -1,0 +1,6 @@
+node_modules/
+*.exe
+*.log
+*.htm
+*.html
+*.jpg
