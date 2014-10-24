@@ -132,8 +132,8 @@ PhantomHelper.upload = function(page, query, filepath, fnCallback)
  attribute is DOM attribute or 'text' for innerText and 'html' for innerHTML
 
  Example:
-    queries = '.a div span>>0>>text'
-    queries = ['.a div span>>0>>text', '.tr div a>>0>>html']
+    queries = '.a div span>>0>>text';
+    queries = ['.a div span>>0>>text', '.tr div a>>0>>html'];
 
 ```
 PhantomHelper.getVal = function(page, queries, fnCallback)
