@@ -49,6 +49,7 @@ _ph.createDefaultPage('http://www.google.com', function (err, page) {
 # Functions
 
 * Create page (phantom instance) with an url
+
 ```
 PhantomHelper.createDefaultPage = function(startURL, callback)
 
@@ -56,7 +57,8 @@ PhantomHelper.createPage = function(phantomHelperCfg, startURL, callback)
 ```
 
 * phantom-helper configure
-** phantomOpt.parameters: is exactly the same as PhantomJs configure without --
+
+phantomOpt.parameters: is exactly the same as PhantomJs configure without '--'
 See more here: http://phantomjs.org/api/command-line.html
 
 ```
@@ -84,37 +86,61 @@ See more here: http://phantomjs.org/api/command-line.html
 
 
 * Render a page with both html content and image (for debugging)
+
 ```
 PhantomHelper.render = function(page, filepath, fnCallback, isForceRender)
 ```
 
 * Execute inject function to phantom
-
 If you want to pass by the input arguments for fnInject, they should placed right before the last callback function
+
 ```
+// execute inject function and wait for any AJAX
 PhantomHelper.doWait = function(page, fnInject, fnCallback)
 
+// execute inject function and wait for any condition function
 PhantomHelper.doWaitCond = function(page, fnInject, ifn_Condition, callback)
 
+// wait for any AJAX then execute inject function
 PhantomHelper.waitDo = function(page, fnInject, fnCallback)
 
+// wait for any condition function then execute inject function
 PhantomHelper.waitDoCond = function(page, fnInject, ifn_Condition, callback)
 
+// execute inject function without waiting
 PhantomHelper.do = function(page, fnInject, callback)
 ```
 
 * Some handy overwrite function with support index when using document.querySelectorAll() in selector
+
 ```
 PhantomHelper.click = function(page, query, index, isWait, fnCallback)
-
-PhantomHelper.getVal = function(page, queries, fnCallback)
 
 PhantomHelper.fill = function(page, query, index, value, fnCallback)
 
 PhantomHelper.upload = function(page, query, filepath, fnCallback)
 ```
 
+* Get value DOM value from page, queries should follow the below format
+   Array: [query1, query2,... ,queryN]
+   or
+   Single string: queryStr
+
+ Result is Hash object with queries as keys and their results as values
+
+ Each query should be formatted as 'selector>>index>>attribute'.
+ attribute is DOM attribute or 'text' for innerText and 'html' for innerHTML
+
+ Example:
+    queries = '.a div span>>0>>text'
+    queries = ['.a div span>>0>>text', '.tr div a>>0>>html']
+
+```
+PhantomHelper.getVal = function(page, queries, fnCallback)
+```
+
 * Waiting functions that wait for page AJAX loaded or some specified condition. The 'timeoutInterval' and 'maxTimeOutMillis' could be ommitted to use the default value
+
 ```
 PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback)
 
