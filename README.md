@@ -119,13 +119,6 @@ PhantomHelper.click = function(page, query, index, isWait, fnCallback)
 PhantomHelper.fill = function(page, query, index, value, fnCallback)
 
 PhantomHelper.upload = function(page, query, filepath, fnCallback)
-
-/*
- Get value DOM value from page, queries should follow the below format
-
-
-*/
-PhantomHelper.getVal = function(page, queries, fnCallback)
 ```
 
 * Get value DOM value from page, queries should follow the below format
