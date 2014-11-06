@@ -360,6 +360,58 @@ PhantomHelper.click = function(page, query, index, isWait, fnCallback){
 	);
 }
 
+PhantomHelper.clickEx = function(page, query, isWait, fnCallback){
+
+	if (!_utils.isStr(query)) {
+		var err = 'Click failed, query argument is not string!'
+		return fnCallback(err);
+	}
+
+	if (_utils.isFunc(isWait)) {
+		fnCallback = isWait;
+		isWait = 0;
+	}
+
+	page.evaluate(
+		function (fnQueryStr, query) {
+
+			eval('var $ = ' + fnQueryStr);
+			var obj = $(query);
+
+			if (!obj) return false;
+
+			var ev = document.createEvent('MouseEvent');
+			ev.initEvent('click', true, false);
+			//ev.initMouseEvent( 'click', true , true , window, null, 0, 0, 0, 0, false, false, false, false, 0 , null);
+			obj.dispatchEvent(ev);
+
+			return true;
+		}, 
+		function (err, result) {
+			if (result && result == true) {
+				if (!isWait)
+					return fnCallback(err, result);
+
+				PhantomHelper.waitPageLoaded(page,  function() {
+					fnCallback(err, result);
+				});
+			}
+			else {
+				var err = 'Click failed, ' + query + ' not found!'
+				_utils.logD(err);
+
+				if (!isWait)
+					return fnCallback(err, result);
+
+				PhantomHelper.waitPageLoaded(page,  function() {
+					fnCallback(err, result);
+				});
+			}
+		},
+		PhantomHelper.exQuerySelectorAll.toString(), query
+	);
+}
+
 PhantomHelper.getVal = function(page, queries, fnCallback){
 	var SPLIT = '>>';
 
@@ -383,17 +435,44 @@ PhantomHelper.getVal = function(page, queries, fnCallback){
 		if (len > count) qIdx = parseInt(words[count++]);
 		if (len > count) qAttribute = words[count++];
 
-		console.log(qSelector, qIdx, qAttribute);
+		//console.log(qSelector, qIdx, qAttribute);
 
 		switch (qAttribute) {
 			case 'html':
-				fnGetVal = function (qSelector, qIdx, qAttribute) {return document.querySelectorAll(qSelector)[qIdx].innerHTML;}
+				fnGetVal = function (query, qSelector, qIdx, qAttribute) {
+					try {
+						return {
+							key: query,
+							value: document.querySelectorAll(qSelector)[qIdx].innerHTML;
+						};
+					} catch (ex) {
+						return {key: query, value: null};
+					}
+				}
 				break;
 			case 'text':
-				fnGetVal = function (qSelector, qIdx, qAttribute) {return document.querySelectorAll(qSelector)[qIdx].innerText;}
+				fnGetVal = function (query, qSelector, qIdx, qAttribute) {
+					try {
+						return {
+							key: query,
+							value: document.querySelectorAll(qSelector)[qIdx].innerText;
+						};
+					} catch (ex) {
+						return {key: query, value: null};
+					}
+				}
 				break;
 			default:
-				fnGetVal = function (qSelector, qIdx, qAttribute) {return document.querySelectorAll(qSelector)[qIdx].getAttribute(qAttribute);}
+				fnGetVal = function (query, qSelector, qIdx, qAttribute) {
+					try {
+						return {
+							key: query,
+							value: document.querySelectorAll(qSelector)[qIdx].getAttribute(qAttribute);
+						};
+					} catch (ex) {
+						return {key: query, value: null};
+					}
+				}
 		}
 
 		//console.log(JSON.stringify(fn));
@@ -406,12 +485,12 @@ PhantomHelper.getVal = function(page, queries, fnCallback){
 		}
 
 		page.evaluate(fnGetVal, function (err, val) {
-			results[query] = val;
+			results[val.key] = val.value;
 
 			if (queries.length == 0) {
 				return fnCallback(null, results);
 			}
-		}, qSelector, qIdx, qAttribute);
+		}, query, qSelector, qIdx, qAttribute);
 	}
 }
 
@@ -443,6 +522,40 @@ PhantomHelper.fill = function(page, query, index, value, fnCallback){
 			}
 		},
 		query, index, value
+	);
+}
+
+PhantomHelper.fillEx = function(page, query, value, fnCallback){
+
+	if (!_utils.isStr(query)) {
+		var err = 'Fill failed, query argument is not string!'
+		return fnCallback(err);
+	}
+
+	page.evaluate(
+		function (fnQueryStr, query, value) {
+
+			eval('var $ = ' + fnQueryStr);
+			var obj = $(query);
+
+			if (!obj) return false;
+
+			obj.value = value;
+
+			return true;
+		}, 
+		function (err, result) {
+			if (result && result == true) {
+				return fnCallback(err, result);
+			}
+			else {
+				var err = 'Fill failed, ' + query + ' not found!'
+				_utils.logD(err);
+
+				return fnCallback(err, result);
+			}
+		},
+		PhantomHelper.exQuerySelectorAll.toString(), query, value
 	);
 }
 
