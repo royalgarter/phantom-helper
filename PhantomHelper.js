@@ -443,7 +443,7 @@ PhantomHelper.getVal = function(page, queries, fnCallback){
 					try {
 						return {
 							key: query,
-							value: document.querySelectorAll(qSelector)[qIdx].innerHTML;
+							value: document.querySelectorAll(qSelector)[qIdx].innerHTML
 						};
 					} catch (ex) {
 						return {key: query, value: null};
@@ -455,7 +455,7 @@ PhantomHelper.getVal = function(page, queries, fnCallback){
 					try {
 						return {
 							key: query,
-							value: document.querySelectorAll(qSelector)[qIdx].innerText;
+							value: document.querySelectorAll(qSelector)[qIdx].innerText
 						};
 					} catch (ex) {
 						return {key: query, value: null};
@@ -467,7 +467,7 @@ PhantomHelper.getVal = function(page, queries, fnCallback){
 					try {
 						return {
 							key: query,
-							value: document.querySelectorAll(qSelector)[qIdx].getAttribute(qAttribute);
+							value: document.querySelectorAll(qSelector)[qIdx].getAttribute(qAttribute)
 						};
 					} catch (ex) {
 						return {key: query, value: null};

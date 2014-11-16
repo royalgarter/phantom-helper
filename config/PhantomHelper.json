@@ -3,6 +3,7 @@
 		"parameters": {
 			"ignore-ssl-errors": "yes",
 			"load-images": "no",
+			"ssl-protocol": "any",
 			"disk-cache": "yes",
 			"max-disk-cache-size": 10000,
 			"proxy-type": "none"
