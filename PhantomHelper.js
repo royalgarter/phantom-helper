@@ -166,6 +166,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				try {
 					_utils.logD('Openning:', startURL);
 					return page.open(startURL, function (err, status) {
+						_utils.logD('Openned:', err, status);
 						if (err) {
 							_utils.logD('Cannot open phantom page:', startURL, err);
 							phantom.exit();
@@ -248,9 +249,13 @@ PhantomHelper.doWaitCond = function(page, fnInject, ifn_Condition, callback) {
 		_utils.handle(err);
 
 		if (_utils.isUnDefOrNull(ifn_Condition))
-			PhantomHelper.waitPageLoaded(page, fnCallback);
+			return PhantomHelper.waitPageLoaded(page, function (err) {
+				return fnCallback(err, result);
+			});
 		else
-			PhantomHelper.waitForCondition(page, ifn_Condition, fnCallback);
+			return PhantomHelper.waitForCondition(page, ifn_Condition, function (err) {
+				return fnCallback(err, result);
+			});
 	};	
 	
 	var evalArgs = [fnInject, fnEvalCb];
@@ -563,6 +568,13 @@ PhantomHelper.upload = function(page, query, filepath, fnCallback){
 	return page.upload(query, filepath, fnCallback);
 }
 
+PhantomHelper.waitForConditionSafe = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback) {
+	var fnCallback = arguments.length > 2 ? arguments[arguments.length-1] : null;
+	return PhantomHelper.waitForCondition(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, function (err, result) {
+		return fnCallback(null, {err: err, result: result});
+	});
+}
+
 PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback) {
 	
 	var fnCallback = arguments.length > 2 ? arguments[arguments.length-1] : null;
@@ -574,9 +586,9 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 
 	var fnHandle = function (err, result) {
 		//testRunning = false;
-		/**/_utils.logD('fnHandle', err, result);
+		//**/_utils.logD('fnHandle', err, result);
 		if (result) {
-			_utils.logD('wait finished in', elapsedTime, 'ms');
+			_utils.logD('wait finished in', Date.now() - startTime, 'ms');
 			fnCallback(err, result);
 		}
 		else {
@@ -660,8 +672,8 @@ PhantomHelper.waitPageLoaded = function (page, timeOutMillis, maxTimeOutMillis, 
 		
 		if (deltaTime > maxTimeOutMillis) {
 			waitDone = true;
-			err = 'wait too long in ' + deltaTime + ' ms, ' + page.countRes + ' resources remained';
-			/**/_utils.logD(err);
+			_utils.logD('wait too long in ' + deltaTime + ' ms, ' + page.countRes + ' resources remained');
+			//**/_utils.logD(err);
 		} else if (deltaTime > timeOutMillis) {			
 			if (page.isLoading == true || page.countRes > 0) {
 				countFinishRes = 0;
