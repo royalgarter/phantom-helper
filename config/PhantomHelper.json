@@ -11,6 +11,7 @@
 		"noWait": 0,
 		"multiPage": 0
 	},
+	"viewportSize" : { "width": 1360, "height": 900 },
 	"timeOutMillis" : 1000,
 	"maxTimeOutMillis" : 60000,
 	"maxTryFinishRes" : 3,

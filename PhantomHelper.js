@@ -42,7 +42,6 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 			}
 		}
 
-
 		return _phantomjs.create(function (err, phantom) {
 			if (err) {
 				_utils.logD('Cannot create phantom browser:', err);
@@ -61,11 +60,6 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				page.countRes = 0;
 				page.isLoading = true;
 				page.multiPage = phantomCfg.multiPage;
-				//page.allResIds = {};
-				page.settings = {
-					userAgent : 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36',
-					resourceTimeout: 5000
-				}
 					
 				page.onResourceRequested = function (request, a) {
 					//**/_utils.logD(request);				
@@ -165,21 +159,32 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 
 				try {
 					_utils.logD('Openning:', startURL);
-					return page.open(startURL, function (err, status) {
-						_utils.logD('Openned:', err, status);
-						if (err) {
-							_utils.logD('Cannot open phantom page:', startURL, err);
-							phantom.exit();
-							setTimeout(fnRetry, delayRetry);
-							return;
-						}
-						//console.log(phantomCfg);
-						if (phantomCfg.noWait) return callback(null, page);
 
-						PhantomHelper.waitPageLoaded(page, function() {
-							return callback(null, page);
+					if (phantomCfg.settings) {
+						page.set('settings', phantomCfg.settings, function (err, res) {});
+					}
+
+					if (phantomCfg.viewportSize) {
+						page.set('viewportSize', phantomCfg.viewportSize, function (err, res) {});
+					}
+
+					return setTimeout(function () {
+						return page.open(startURL, function (err, status) {
+							_utils.logD('Openned:', err, status);
+							if (err) {
+								_utils.logD('Cannot open phantom page:', startURL, err);
+								phantom.exit();
+								setTimeout(fnRetry, delayRetry);
+								return;
+							}
+							//console.log(phantomCfg);
+							if (phantomCfg.noWait) return callback(null, page);
+
+							PhantomHelper.waitPageLoaded(page, function() {
+								return callback(null, page);
+							});
 						});
-					});
+					}, 1000);
 				} catch (ex) {
 					_utils.logD('Cannot open phantom page:', startURL, ex);
 					phantom.exit();
