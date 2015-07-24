@@ -20,6 +20,15 @@ var run = function (page) {
 	console.log(step++);_wait.for(page.close);
 }
 
+var run2 = function (page) {
+	_wait.for(_phantomHelper.render, page, 'begin.jpg');
+	_wait.for(_phantomHelper.fill, page, '[name="q"]', 0, 'phantom-helper');
+	_wait.for(_phantomHelper.clickNaEx, page, '.lsb', null, 1);
+	_wait.for(_phantomHelper.render, page, 'res.jpg');
+
+	_wait.for(page.close);
+}
+
 
 /********** IFN FUNCTIONS **********/
 
@@ -62,8 +71,13 @@ var ifn_Delete = function () {
 
 /********** MAIN FUNCTIONS **********/
 
-_phantomHelper.createDefaultPage(_host, function (err, page) {
+// _phantomHelper.createDefaultPage(_host, function (err, page) {
+// 	console.log('createPage done', err);
+// 	_wait.launchFiber(run, page);
+// });
+
+_phantomHelper.createDefaultPage('http://www.google.com', function (err, page) {
 	console.log('createPage done', err);
-	_wait.launchFiber(run, page);
+	_wait.launchFiber(run2, page);
 });
 

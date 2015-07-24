@@ -42,7 +42,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 			}
 		}
 
-		return _phantomjs.create(function (err, phantom) {
+		return _phantomjs.create(phantomCfg, function (err, phantom) {
 			if (err) {
 				_utils.logD('Cannot create phantom browser:', err);
 				setTimeout(fnRetry, delayRetry);
@@ -191,7 +191,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 					setTimeout(fnRetry, delayRetry);
 				}
 			});
-		}, phantomCfg);			
+		});			
 	}
 
 	return fnCreatePhantom(phantomCfg, startURL, callback);
@@ -263,8 +263,9 @@ PhantomHelper.doWaitCond = function(page, fnInject, ifn_Condition, callback) {
 			});
 	};	
 	
-	var evalArgs = [fnInject, fnEvalCb];
+	var evalArgs = [fnInject];
 	evalArgs = evalArgs.concat(ifn_args);
+	evalArgs.push(fnEvalCb);
 	
 	page.evaluate.apply(page, evalArgs);
 }
@@ -279,8 +280,9 @@ PhantomHelper.do = function(page, fnInject, callback) {
 
 	var ifn_params = args.splice(ARG_LEN - 1, args.length - ARG_LEN);
 
-	var evalArgs = [fnInject, fnCallback];
+	var evalArgs = [fnInject];
 	evalArgs = evalArgs.concat(ifn_params);
+	evalArgs.push(fnCallback);
 
 	page.evaluate.apply(page, evalArgs);
 }
@@ -302,8 +304,9 @@ PhantomHelper.waitDoCond = function(page, fnInject, ifn_Condition, callback) {
 	
 	var ifn_args = args.splice(ARG_LEN - 1, args.length - ARG_LEN);
 
-	var evalArgs = [fnInject, fnCallback];
+	var evalArgs = [fnInject];
 	evalArgs = evalArgs.concat(ifn_args);
+	evalArgs.push(fnCallback);
 
 	if (_utils.isUnDefOrNull(ifn_Condition))
 		PhantomHelper.waitPageLoaded(page,  function() {
@@ -345,6 +348,7 @@ PhantomHelper.click = function(page, query, index, isWait, fnCallback){
 
 			return true;
 		}, 
+		query, index,
 		function (err, result) {
 			if (result && result == true) {
 				if (!isWait)
@@ -365,8 +369,7 @@ PhantomHelper.click = function(page, query, index, isWait, fnCallback){
 					fnCallback(err, result);
 				});
 			}
-		},
-		query, index
+		}
 	);
 }
 
@@ -386,7 +389,9 @@ PhantomHelper.clickEx = function(page, query, isWait, fnCallback){
 		function (fnQueryStr, query) {
 
 			eval('var $ = ' + fnQueryStr);
+			console.log($);
 			var obj = $(query);
+			console.log(obj);
 
 			if (!obj) return false;
 
@@ -397,6 +402,7 @@ PhantomHelper.clickEx = function(page, query, isWait, fnCallback){
 
 			return true;
 		}, 
+		PhantomHelper.exQuerySelectorAll.toString(), query,
 		function (err, result) {
 			if (result && result == true) {
 				if (!isWait)
@@ -417,8 +423,92 @@ PhantomHelper.clickEx = function(page, query, isWait, fnCallback){
 					fnCallback(err, result);
 				});
 			}
-		},
+		}
+	);
+}
+
+
+/* 
+options = {
+	dx: 0,
+	dy: 0,
+	type: 'left'
+}
+*/
+PhantomHelper.clickNaEx = function(page, query, options, isWait, fnCallback){
+
+	if (!_utils.isStr(query)) {
+		var err = 'Click failed, query argument is not string!'
+		return fnCallback(err);
+	}
+
+	if (_utils.isFunc(isWait)) {
+		fnCallback = isWait;
+		isWait = 0;
+	}
+
+	options = (options === undefined || options === null) ? {} : options;
+	options.dx = options.dx ? options.dx : 0;
+	options.dy = options.dy ? options.dy : 0;
+	options.type = options.type ? options.type :'left';
+
+	page.evaluate(
+		function (fnQueryStr, query) {
+
+			var getOffsetRect = function(elem) {
+
+				if (!elem) return null;
+				//console.log(elem);
+				var box = elem.getBoundingClientRect();
+				//console.log(box);
+
+				var body = document.body;
+				var docElem = document.documentElement;
+
+				var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+				var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
+
+				var clientTop = docElem.clientTop || body.clientTop || 0;
+				var clientLeft = docElem.clientLeft || body.clientLeft || 0;
+
+				var top  = box.top +  scrollTop - clientTop;
+				var left = box.left + scrollLeft - clientLeft;
+
+				return { top: Math.round(top), left: Math.round(left), width: box.width, height: box.height };
+			}
+
+			eval('var $ = ' + fnQueryStr);
+			console.log($);
+			var obj = $(query);
+			console.log(obj);
+
+			if (!obj) return null;
+
+			return getOffsetRect(obj);
+		}, 
 		PhantomHelper.exQuerySelectorAll.toString(), query
+		function (err, result) {
+			if (result) {
+				return page.sendEvent('click', result.left + options.dx, rect.top + options.dy, options.type, function (err) {
+					if (!isWait)
+						return fnCallback(err, result);
+
+					PhantomHelper.waitPageLoaded(page,  function() {
+						fnCallback(err, result);
+					});
+				});
+			} else {
+				var err = 'Click failed, ' + query + ' not found!'
+				_utils.logD(err);
+
+				if (!isWait)
+					return fnCallback(err, result);
+
+				return PhantomHelper.waitPageLoaded(page,  function() {
+					fnCallback(err, result);
+				});
+			}
+		}
 	);
 }
 
@@ -494,13 +584,13 @@ PhantomHelper.getVal = function(page, queries, fnCallback){
 			continue;
 		}
 
-		page.evaluate(fnGetVal, function (err, val) {
+		page.evaluate(fnGetVal, query, qSelector, qIdx, qAttribute, function (err, val) {
 			results[val.key] = val.value;
 
 			if (queries.length == 0) {
 				return fnCallback(null, results);
 			}
-		}, query, qSelector, qIdx, qAttribute);
+		});
 	}
 }
 
@@ -520,6 +610,7 @@ PhantomHelper.fill = function(page, query, index, value, fnCallback){
 
 			return true;
 		}, 
+		query, index, value,
 		function (err, result) {
 			if (result && result == true) {
 				return fnCallback(err, result);
@@ -530,8 +621,7 @@ PhantomHelper.fill = function(page, query, index, value, fnCallback){
 
 				return fnCallback(err, result);
 			}
-		},
-		query, index, value
+		}
 	);
 }
 
@@ -554,6 +644,7 @@ PhantomHelper.fillEx = function(page, query, value, fnCallback){
 
 			return true;
 		}, 
+		PhantomHelper.exQuerySelectorAll.toString(), query, value,
 		function (err, result) {
 			if (result && result == true) {
 				return fnCallback(err, result);
@@ -564,8 +655,7 @@ PhantomHelper.fillEx = function(page, query, value, fnCallback){
 
 				return fnCallback(err, result);
 			}
-		},
-		PhantomHelper.exQuerySelectorAll.toString(), query, value
+		}
 	);
 }
 
@@ -615,7 +705,8 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 			case 'string':
 				//**/_utils.logD('string');
 				var argsCond = PhantomHelper.buildFnCondition(ifn_Condition);
-				argsCond.splice(1, 0, fnHandle);
+				//argsCond.splice(1, 0, fnHandle);
+				argsCond.push(fnHandle);
 				page.evaluate.apply(page, argsCond);
 				break;
 			case 'function':
@@ -639,7 +730,8 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 					    		fnWhilst(null);
 					    	}
 
-					    	argsCond.splice(1, 0, fnEvalCb);
+					    	//argsCond.splice(1, 0, fnEvalCb);
+					    	argsCond.push(fnHandle);
 					    	page.evaluate.apply(page, argsCond);
 					    },
 					    function (err) {
@@ -722,7 +814,6 @@ PhantomHelper.buildFnCondition = function (strCond) {
 	if (len > count) qRegex = words[count++];
 
 	var fnCond = function (qSelector, qIdx, qAttribute, qRegex) {
-
 		try {
 			//**/console.log(1);
 			if (!(typeof qSelector === 'undefined' || qSelector == null)) {
@@ -793,15 +884,15 @@ PhantomHelper.exQuerySelectorAll = function (queryStr) {
 
 	//var query = '.abc:eq(0) span:eq(1) div';
 	var words = queryStr.split(':eq(');
-	//console.log(words);
+	console.log('words', words);
 
 	var ptr = document.querySelectorAll(words[0]);
-
+	console.log('ptr', ptr.innerHTML);
 	if (words.length < 2) return ptr;
 
 	for (var i = 1; i < words.length; i++) {
 		var eles = words[i].split(') ');
-		//console.log(eles);
+		console.log(eles);
 
 		if (eles.length > 0)
 			ptr = ptr[eles[0]];
@@ -811,4 +902,24 @@ PhantomHelper.exQuerySelectorAll = function (queryStr) {
 	};
 
 	return ptr;
+}
+
+PhantomHelper.getOffsetRect = function(elem) {
+	//console.log(elem);
+	var box = elem.getBoundingClientRect();
+	//console.log(box);
+
+	var body = document.body;
+	var docElem = document.documentElement;
+
+	var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+	var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
+
+	var clientTop = docElem.clientTop || body.clientTop || 0;
+	var clientLeft = docElem.clientLeft || body.clientLeft || 0;
+
+	var top  = box.top +  scrollTop - clientTop;
+	var left = box.left + scrollLeft - clientLeft;
+
+	return { top: Math.round(top), left: Math.round(left), width: box.width, height: box.height };
 }

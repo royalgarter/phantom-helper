@@ -6,6 +6,11 @@ Rewrite most static functions for below purposes
 * Add some handy function to wait for page loaded with ajax
 * Render both light-weight html and image for Debug
 
+# Prerequires: 
+
+* Take a look at: https://github.com/baudehlo/node-phantom-simple (what we based on)
+* Take a look at: http://phantomjs.org/api/command-line.html (the original one)
+
 
 # Basic sample
 
@@ -74,6 +79,7 @@ See more here: http://phantomjs.org/api/command-line.html
 		"noWait": 0,     // not supported yet, leave as default
 		"multiPage": 0   // not supported yet, leave as default
 	},
+	"viewportSize" : { "width": 1360, "height": 900 },
 	"timeOutMillis" : 1000, // iterator timeout to check AJAX resources
 	"maxTimeOutMillis" : 60000, // max timeout to check AJAX resources
 	"maxTryFinishRes" : 3, // check the resource available n times to make sure AJAX loaded
