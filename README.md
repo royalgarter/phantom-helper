@@ -118,13 +118,22 @@ PhantomHelper.do = function(page, fnInject, callback)
 ```
 
 * Some handy overwrite function with support index when using document.querySelectorAll() in selector
+The "Ex" function support jQuery like selector with :eq(<index>) to clarify index of DOM
+The "clickNaEx" apply the native click (click at XY coordinate based on viewportSize). See more at: http://phantomjs.org/api/webpage/method/send-event.html
 
 ```
 PhantomHelper.click = function(page, query, index, isWait, fnCallback)
 
 PhantomHelper.fill = function(page, query, index, value, fnCallback)
 
+PhantomHelper.clickEx = function(page, query, isWait, fnCallback)
+
+PhantomHelper.clickNaEx = function(page, query, options (default null), isWait, fnCallback)
+
+PhantomHelper.fillEx = function(page, query, value, fnCallback)
+
 PhantomHelper.upload = function(page, query, filepath, fnCallback)
+
 ```
 
 * Get value DOM value from page, queries should follow the below format
