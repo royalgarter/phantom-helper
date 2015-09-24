@@ -389,15 +389,15 @@ PhantomHelper.clickEx = function(page, query, isWait, fnCallback){
 		function (fnQueryStr, query) {
 
 			eval('var $ = ' + fnQueryStr);
-			console.log($);
+			//console.log($);
 			var obj = $(query);
-			console.log(obj);
+			//console.log(obj);
 
 			if (!obj) return false;
 
+			//ev.initMouseEvent( 'click', true , true , window, null, 0, 0, 0, 0, false, false, false, false, 0 , null);
 			var ev = document.createEvent('MouseEvent');
 			ev.initEvent('click', true, false);
-			//ev.initMouseEvent( 'click', true , true , window, null, 0, 0, 0, 0, false, false, false, false, 0 , null);
 			obj.dispatchEvent(ev);
 
 			return true;
@@ -478,18 +478,19 @@ PhantomHelper.clickNaEx = function(page, query, options, isWait, fnCallback){
 			}
 
 			eval('var $ = ' + fnQueryStr);
-			console.log($);
+			//console.log($);
 			var obj = $(query);
-			console.log(obj);
+			//console.log(obj);
 
 			if (!obj) return null;
 
 			return getOffsetRect(obj);
 		}, 
-		PhantomHelper.exQuerySelectorAll.toString(), query
+		PhantomHelper.exQuerySelectorAll.toString(), query,
 		function (err, result) {
+			console.log('RECT', result);
 			if (result) {
-				return page.sendEvent('click', result.left + options.dx, rect.top + options.dy, options.type, function (err) {
+				return page.sendEvent('click', result.left + options.dx, result.top + options.dy, options.type, function (err) {
 					if (!isWait)
 						return fnCallback(err, result);
 
@@ -882,23 +883,21 @@ PhantomHelper.exQuerySelectorAll = function (queryStr) {
 	if (!queryStr || queryStr.length < 1)
 		return null;
 
-	//var query = '.abc:eq(0) span:eq(1) div';
+	// queryStr = '.abc:eq(0) span:eq(1) div';
 	var words = queryStr.split(':eq(');
-	console.log('words', words);
 
 	var ptr = document.querySelectorAll(words[0]);
-	console.log('ptr', ptr.innerHTML);
-	if (words.length < 2) return ptr;
+	if (words.length < 2) return ptr[0];
 
 	for (var i = 1; i < words.length; i++) {
-		var eles = words[i].split(') ');
-		console.log(eles);
+		var eles = words[i].split(')');
+		// console.log('eles', eles);
 
 		if (eles.length > 0)
 			ptr = ptr[eles[0]];
 
-		if (eles.length > 1)
-			ptr = ptr.querySelectorAll(eles[1]);
+		if (eles.length > 1 && eles[1])
+			ptr = ptr.querySelectorAll(eles[1].trim());
 	};
 
 	return ptr;

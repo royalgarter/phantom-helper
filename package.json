@@ -5,7 +5,7 @@
   },
   "name": "phantom-helper",
   "description": "Helper for PhantomJS with Node.js with plenty of handy functions",
-  "version": "2.0.4",
+  "version": "2.0.6",
   "homepage": "https://github.com/royalgarter/phantom-helper",
   "repository": {
     "type": "git",
@@ -16,7 +16,7 @@
     "test": "./test"
   },
   "dependencies": {
-    "node-phantom-simple": "2.0.4"
+    "node-phantom-simple": "2.0.5"
   },
   "devDependencies": {
     "wait.for": "*"
@@ -30,6 +30,6 @@
   "bugs": {
     "url": "https://github.com/royalgarter/phantom-helper/issues"
   },
-  "_id": "phantom-helper@2.0.4",
+  "_id": "phantom-helper@2.0.6",
   "_from": "phantom-helper@*"
 }
