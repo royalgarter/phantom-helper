@@ -169,6 +169,13 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 					}
 
 					return setTimeout(function () {
+
+						if (phantomCfg.phantomOpt.parameters.proxy) {
+							var words = phantomCfg.phantomOpt.parameters.proxy.split(':');
+							if (words.length >= 2)
+								phantom.setProxy(words[0], words[1], 'manual', '', '');
+						}
+
 						return page.open(startURL, function (err, status) {
 							_utils.logD('Openned:', err, status);
 							if (err) {
