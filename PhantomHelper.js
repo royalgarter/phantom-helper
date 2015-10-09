@@ -170,8 +170,16 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 
 					return setTimeout(function () {
 
-						if (phantomCfg.phantomOpt.parameters.proxy) {
-							var words = phantomCfg.phantomOpt.parameters.proxy.split(':');
+						var proxyRaw = phantomCfg.phantomOpt.parameters.proxy;
+						var proxy = proxyRaw;
+						if (proxyRaw) {
+
+							if (Array.isArray(proxyRaw)) {
+								var idx = Math.floor((Math.random() * proxyRaw.length));
+								proxy = proxyRaw[idx];
+							}
+
+							var words = proxy.split(':');
 							if (words.length >= 2)
 								phantom.setProxy(words[0], words[1], 'manual', '', '');
 						}
