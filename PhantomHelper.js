@@ -173,12 +173,12 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 						var proxyRaw = phantomCfg.phantomOpt.parameters.proxy;
 						var proxy = proxyRaw;
 						if (proxyRaw) {
-
+							console.log('Proxies:', proxyRaw);
 							if (Array.isArray(proxyRaw)) {
 								var idx = Math.floor((Math.random() * proxyRaw.length));
 								proxy = proxyRaw[idx];
 							}
-
+							console.log('Using proxy:', proxy);
 							var words = proxy.split(':');
 							if (words.length >= 2)
 								phantom.setProxy(words[0], words[1], 'manual', '', '');
