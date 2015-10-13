@@ -179,6 +179,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 								proxy = proxyRaw[idx];
 							}
 							console.log('Using proxy:', proxy);
+							page.proxy = proxy;
 							var words = proxy.split(':');
 							if (words.length >= 2)
 								phantom.setProxy(words[0], words[1], 'manual', '', '');
