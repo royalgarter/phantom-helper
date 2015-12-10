@@ -147,12 +147,13 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				});
 
 				_hook.setup(function (string, encoding, fd) {
-					if (string.length > 0 && !~string.indexOf('STDOUT')) {
+					if (string.length > 0 && string.indexOf('STDOUT') < 0) {
 						//console.log('STDOUT: ', string);
 
-						for (var critErr in _CRITICAL_ERRORS) {
-							if (~string.indexOf(critErr)) process.exit(1);
-						}
+						for (var i = _CRITICAL_ERRORS.length - 1; i >= 0; i--) {
+							if (string.indexOf(_CRITICAL_ERRORS[i]) >= 0)
+								process.exit(1);
+						};
 					}
 				});
 
@@ -186,6 +187,13 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 								phantom.setProxy(words[0], words[1], 'manual', '', '');
 						}
 
+						var cookies = phantomCfg.cookies;
+						if (cookies && cookies.length > 0) {
+							for (var idx = 0; idx < cookies.length; idx++) {
+								phantom.addCookie(cookies[idx]);
+							};
+						}
+
 						return page.open(startURL, function (err, status) {
 							_utils.logD('Openned:', err, status);
 							if (err) {
@@ -194,9 +202,10 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 								setTimeout(fnRetry, delayRetry);
 								return;
 							}
-							//console.log(phantomCfg);
-							if (phantomCfg.noWait) return callback(null, page);
-
+							
+							if (phantomCfg.phantomOpt.parameters.noWait) 
+								return callback(null, page);
+							
 							PhantomHelper.waitPageLoaded(page, function() {
 								return callback(null, page);
 							});
