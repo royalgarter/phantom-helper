@@ -49,6 +49,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				return;
 			}
 
+			PhantomHelper.phantom = phantom;
 			phantom.createPage(function (err, page) {
 				if (err) {
 					_utils.logD('Cannot create phantom page:', err);
@@ -146,12 +147,12 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				});
 
 				_hook.setup(function (string, encoding, fd) {
-					if (string.length > 0 && string.indexOf('STDOUT') < 0) {
+					if (string.length > 0 && !~string.indexOf('STDOUT')) {
 						//console.log('STDOUT: ', string);
-						for (var i = _CRITICAL_ERRORS.length - 1; i >= 0; i--) {
-							if (string.indexOf(_CRITICAL_ERRORS[i]) >= 0)
-								process.exit(1);
-						};
+
+						for (var critErr in _CRITICAL_ERRORS) {
+							if (~string.indexOf(critErr)) process.exit(1);
+						}
 					}
 				});
 
