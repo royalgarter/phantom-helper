@@ -189,6 +189,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 
 						var cookies = phantomCfg.cookies;
 						if (cookies && cookies.length > 0) {
+							console.log('Using cookies:', cookies);
 							for (var idx = 0; idx < cookies.length; idx++) {
 								phantom.addCookie(cookies[idx]);
 							};
@@ -583,6 +584,18 @@ PhantomHelper.getVal = function(page, queries, fnCallback){
 						return {
 							key: query,
 							value: document.querySelectorAll(qSelector)[qIdx].innerText
+						};
+					} catch (ex) {
+						return {key: query, value: null};
+					}
+				}
+				break;
+			case 'value':
+				fnGetVal = function (query, qSelector, qIdx, qAttribute) {
+					try {
+						return {
+							key: query,
+							value: document.querySelectorAll(qSelector)[qIdx].value
 						};
 					} catch (ex) {
 						return {key: query, value: null};
