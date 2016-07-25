@@ -42,7 +42,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 			}
 		}
 
-		return _phantomjs.create(phantomCfg, function (err, phantom) {
+		return _phantomjs.create(phantomCfg.phantomOpt || phantomCfg, function (err, phantom) {
 			if (err) {
 				_utils.logD('Cannot create phantom browser:', err);
 				setTimeout(fnRetry, delayRetry);
@@ -184,7 +184,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 							page.proxy = proxy;
 							var words = proxy.split(':');
 							if (words.length >= 2)
-								phantom.setProxy(words[0], words[1], 'manual' || phantomCfg.phantomOpt.parameters.proxyType, '', '');
+								phantom.setProxy(words[0], words[1], 'manual' || phantomCfg.phantomOpt.parameters['proxy-type'], '', '');
 						}
 
 						var cookies = phantomCfg.cookies;
