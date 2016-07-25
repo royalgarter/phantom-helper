@@ -184,7 +184,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 							page.proxy = proxy;
 							var words = proxy.split(':');
 							if (words.length >= 2)
-								phantom.setProxy(words[0], words[1], 'manual', '', '');
+								phantom.setProxy(words[0], words[1], 'manual' || phantomCfg.phantomOpt.parameters.proxyType, '', '');
 						}
 
 						var cookies = phantomCfg.cookies;
@@ -197,7 +197,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 
 						return page.open(startURL, function (err, status) {
 							_utils.logD('Openned:', err, status);
-							if (err) {
+							if (err || status == 'fail') {
 								_utils.logD('Cannot open phantom page:', startURL, err);
 								phantom.exit();
 								setTimeout(fnRetry, delayRetry);
