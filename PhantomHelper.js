@@ -183,8 +183,19 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 							console.log('Using proxy:', proxy);
 							page.proxy = proxy;
 							var words = proxy.split(':');
-							if (words.length >= 2)
-								phantom.setProxy(words[0], words[1], 'manual' || phantomCfg.phantomOpt.parameters['proxy-type'], '', '');
+							if (words.length >= 2) {
+								var proxyAuth = phantomCfg.phantomOpt.parameters['proxy-auth'];
+								var username = '';
+								var password = '';
+
+								if (proxyAuth) {
+									var auth = proxyAuth.split(':');
+									username = auth[0];
+									password = auth[1];
+								}
+
+								phantom.setProxy(words[0], words[1], 'http' || phantomCfg.phantomOpt.parameters['proxy-type'], username, password);
+							}
 						}
 
 						var cookies = phantomCfg.cookies;
