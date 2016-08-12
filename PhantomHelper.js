@@ -188,6 +188,10 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 								var username = '';
 								var password = '';
 
+								if (!proxyAuth && ~proxy.indexOf(':AUTH:')) {
+									proxyAuth = proxy.split(':AUTH:')[1];
+								}
+
 								if (proxyAuth) {
 									var auth = proxyAuth.split(':');
 									username = auth[0];
