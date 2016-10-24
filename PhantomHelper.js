@@ -251,6 +251,9 @@ PhantomHelper.render = function(page, filepath, fnCallback, isForceRender) {
 		}
 		
 		page.get('content', function (err, res) {
+			if (err || !res)
+				return fnCallback && fnCallback(null);
+			
 			if (_cfgPH.isMiniRender) {
 				//res = res.replace(/\n/g, '').replace(/<script.*>.*<\/script>/gi, '');
 				res = res.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
