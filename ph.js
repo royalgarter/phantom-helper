@@ -4,7 +4,7 @@ const _fs = require('fs');
 const _utils = require('./utils/util.js');
 const _hook = require('./utils/hook_stdout.js');
 
-const CRITICAL_ERRORS = ['Request() error evaluating open()', 'Error: read ECONNRESET']
+const CRITICAL_ERRORS = ['Request() error evaluating open()', 'Error: read ECONNRESET'];
 const ERR_ARGS = 'Not enough arguments';
 
 let _cfgPH = require('./config/ph.json');
@@ -32,7 +32,8 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 			} else {
 				callback('Cannot create phantom browser & page');
 			}
-		}
+		};
+
 		return _phantomjs.create(phantomCfg.phantomOpt || phantomCfg, function(err, phantom) {
 			if (err) {
 				_utils.logD('Cannot create phantom browser:', err);
@@ -50,6 +51,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				page.countRes = 0;
 				page.isLoading = true;
 				page.multiPage = phantomCfg.multiPage;
+				
 				page.onResourceRequested = function(request, a) {
 					if (request.url.indexOf('.js') < 0) return;
 					page.countRes++;
@@ -205,11 +207,11 @@ PhantomHelper.doWait = function(page, fnInject, fnCallback) {
 }
 
 PhantomHelper.doWaitCond = function(page, fnInject, ifn_Condition, callback) {
-	let ARG_LEN = 4;
-	let fnCallback = arguments.length > (ARG_LEN - 1) ? arguments[arguments.length - 1] : null;
-	let args = [].splice.call(arguments, 0, arguments.length);
-	let ifn_args = args.splice(ARG_LEN - 1, args.length - ARG_LEN);
-	let fnEvalCb = function(err, result) {
+	const ARG_LEN = 4;
+	const fnCallback = arguments.length > (ARG_LEN - 1) ? arguments[arguments.length - 1] : null;
+	const args = [].splice.call(arguments, 0, arguments.length);
+	const ifn_args = args.splice(ARG_LEN - 1, args.length - ARG_LEN);
+	const fnEvalCb = function(err, result) {
 		_utils.handle(err);
 		if (_utils.isUnDefOrNull(ifn_Condition)) return PhantomHelper.waitPageLoaded(page, function(err) {
 			return fnCallback(err, result);
@@ -225,10 +227,10 @@ PhantomHelper.doWaitCond = function(page, fnInject, ifn_Condition, callback) {
 }
 
 PhantomHelper.do = function(page, fnInject, callback) {
-	let ARG_LEN = 3;
-	let fnCallback = arguments.length > (ARG_LEN - 1) ? arguments[arguments.length - 1] : null;
-	let args = [].splice.call(arguments, 0, arguments.length);
-	let ifn_params = args.splice(ARG_LEN - 1, args.length - ARG_LEN);
+	const ARG_LEN = 3;
+	const fnCallback = arguments.length > (ARG_LEN - 1) ? arguments[arguments.length - 1] : null;
+	const args = [].splice.call(arguments, 0, arguments.length);
+	const ifn_params = args.splice(ARG_LEN - 1, args.length - ARG_LEN);
 	let evalArgs = [fnInject];
 	evalArgs = evalArgs.concat(ifn_params);
 	evalArgs.push(fnCallback);
@@ -236,16 +238,16 @@ PhantomHelper.do = function(page, fnInject, callback) {
 }
 
 PhantomHelper.waitDo = function(page, fnInject, fnCallback) {
-	let args = [].splice.call(arguments, 0, arguments.length);
+	const args = [].splice.call(arguments, 0, arguments.length);
 	args.splice(2, 0, null);
 	PhantomHelper.waitDoCond.apply(PhantomHelper, args);
 }
 
 PhantomHelper.waitDoCond = function(page, fnInject, ifn_Condition, callback) {
-	let ARG_LEN = 4;
-	let fnCallback = arguments.length > (ARG_LEN - 1) ? arguments[arguments.length - 1] : null;
-	let args = [].splice.call(arguments, 0, arguments.length);
-	let ifn_args = args.splice(ARG_LEN - 1, args.length - ARG_LEN);
+	const ARG_LEN = 4;
+	const fnCallback = arguments.length > (ARG_LEN - 1) ? arguments[arguments.length - 1] : null;
+	const args = [].splice.call(arguments, 0, arguments.length);
+	const ifn_args = args.splice(ARG_LEN - 1, args.length - ARG_LEN);
 	let evalArgs = [fnInject];
 	evalArgs = evalArgs.concat(ifn_args);
 	evalArgs.push(fnCallback);
@@ -272,8 +274,8 @@ PhantomHelper.click = function(page, query, index, isWait, fnCallback) {
 		isWait = 0;
 	}
 	page.evaluate(function(query, index) {
-		if (document.querySelectorAll(query).length < index + 1) return false
-		let ev = document.createEvent('MouseEvent');
+		if (document.querySelectorAll(query).length < index + 1) return false;
+		var ev = document.createEvent('MouseEvent');
 		ev.initEvent('click', true, false);
 		document.querySelectorAll(query)[index].dispatchEvent(ev);
 		return true;
@@ -305,9 +307,9 @@ PhantomHelper.clickEx = function(page, query, isWait, fnCallback) {
 	}
 	page.evaluate(function(fnQueryStr, query) {
 		eval('var $ = ' + fnQueryStr);
-		let obj = $(query);
+		var obj = $(query);
 		if (!obj) return false;
-		let ev = document.createEvent('MouseEvent');
+		var ev = document.createEvent('MouseEvent');
 		ev.initEvent('click', true, false);
 		obj.dispatchEvent(ev);
 		return true;
@@ -342,17 +344,17 @@ PhantomHelper.clickNaEx = function(page, query, options, isWait, fnCallback) {
 	options.dy = options.dy ? options.dy : 0;
 	options.type = options.type ? options.type : 'left';
 	page.evaluate(function(fnQueryStr, query) {
-		let getOffsetRect = function(elem) {
+		const getOffsetRect = function(elem) {
 			if (!elem) return null;
-			let box = elem.getBoundingClientRect();
-			let body = document.body;
-			let docElem = document.documentElement;
-			let scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
-			let scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
-			let clientTop = docElem.clientTop || body.clientTop || 0;
-			let clientLeft = docElem.clientLeft || body.clientLeft || 0;
-			let top = box.top + scrollTop - clientTop;
-			let left = box.left + scrollLeft - clientLeft;
+			var box = elem.getBoundingClientRect();
+			var body = document.body;
+			var docElem = document.documentElement;
+			var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+			var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
+			var clientTop = docElem.clientTop || body.clientTop || 0;
+			var clientLeft = docElem.clientLeft || body.clientLeft || 0;
+			var top = box.top + scrollTop - clientTop;
+			var left = box.left + scrollLeft - clientLeft;
 			return {
 				top: Math.round(top),
 				left: Math.round(left),
@@ -361,7 +363,7 @@ PhantomHelper.clickNaEx = function(page, query, options, isWait, fnCallback) {
 			};
 		}
 		eval('var $ = ' + fnQueryStr);
-		let obj = $(query);
+		var obj = $(query);
 		if (!obj) return null;
 		return getOffsetRect(obj);
 	}, PhantomHelper.exQuerySelectorAll.toString(), query, function(err, result) {
@@ -482,7 +484,7 @@ PhantomHelper.fill = function(page, query, index, value, fnCallback) {
 		return fnCallback(err);
 	}
 	page.evaluate(function(query, index, value) {
-		if (document.querySelectorAll(query).length < index + 1) return false
+		if (document.querySelectorAll(query).length < index + 1) return false;
 		document.querySelectorAll(query)[index].value = value;
 		return true;
 	}, query, index, value, function(err, result) {
@@ -503,7 +505,7 @@ PhantomHelper.fillEx = function(page, query, value, fnCallback) {
 	}
 	page.evaluate(function(fnQueryStr, query, value) {
 		eval('var $ = ' + fnQueryStr);
-		let obj = $(query);
+		var obj = $(query);
 		if (!obj) return false;
 		obj.value = value;
 		return true;
@@ -687,15 +689,15 @@ PhantomHelper.exQuerySelectorAll = function(queryStr) {
 }
 
 PhantomHelper.getOffsetRect = function(elem) {
-	let box = elem.getBoundingClientRect();
-	let body = document.body;
-	let docElem = document.documentElement;
-	let scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
-	let scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
-	let clientTop = docElem.clientTop || body.clientTop || 0;
-	let clientLeft = docElem.clientLeft || body.clientLeft || 0;
-	let top = box.top + scrollTop - clientTop;
-	let left = box.left + scrollLeft - clientLeft;
+	var box = elem.getBoundingClientRect();
+	var body = document.body;
+	var docElem = document.documentElement;
+	var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+	var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
+	var clientTop = docElem.clientTop || body.clientTop || 0;
+	var clientLeft = docElem.clientLeft || body.clientLeft || 0;
+	var top = box.top + scrollTop - clientTop;
+	var left = box.left + scrollLeft - clientLeft;
 	return {
 		top: Math.round(top),
 		left: Math.round(left),
