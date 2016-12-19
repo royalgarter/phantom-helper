@@ -51,7 +51,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				page.countRes = 0;
 				page.isLoading = true;
 				page.multiPage = phantomCfg.multiPage;
-				
+
 				page.onResourceRequested = function(request, a) {
 					if (request.url.indexOf('.js') < 0) return;
 					page.countRes++;
@@ -624,7 +624,9 @@ PhantomHelper.waitPageLoaded = function(page, timeOutMillis, maxTimeOutMillis, c
 		}
 	}, _cfgPH.timeInterval);
 }
-	/***************************** SUPPORT FUNCTIONS *******************************/
+
+/***************************** SUPPORT FUNCTIONS *******************************/
+
 PhantomHelper.buildFnCondition = function(strCond) {
 	let SPLIT = '>>';
 	let words = strCond.split(SPLIT);
