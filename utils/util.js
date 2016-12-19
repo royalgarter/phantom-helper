@@ -83,19 +83,3 @@ Utils.replaceAll = function(find, replace, str) {
 	}
   	return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
 }
-
-Utils.checkUpTime = function (upTimeoutExitMinute) {
-	console.log('COUNT CHILD:', _countRunning, '/', _limitRunning);
-	var now = Date.now();
-	var deltaT = (now - _upTime) / (1000 * 60);
-
-	if (deltaT > upTimeoutExitMinute) {
-		_db.stop();
-		process.exit(0);		
-	}
-
-	if (_countRunning < _limitRunning)
-		return false;
-
-	return true;
-}

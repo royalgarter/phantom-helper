@@ -1,8 +1,8 @@
 'use strict';
 const _phantomjs = require('node-phantom-simple');
 const _fs = require('fs');
-const _utils = require('./utils/utils');
-const _hook = require('./utils/hook_stdout');
+const _utils = require('./utils/util.js');
+const _hook = require('./utils/hook_stdout.js');
 
 const CRITICAL_ERRORS = ['Request() error evaluating open()', 'Error: read ECONNRESET']
 const ERR_ARGS = 'Not enough arguments';
@@ -21,11 +21,11 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 	_utils.logD(phantomCfg);
 	_cfgPH = phantomCfg;
 	let countTry = 0;
-	let maxCountTry = 3;
-	let delayRetry = 5000;
-	let fnCreatePhantom = function(phantomCfg, startURL, callback) {
+	const maxCountTry = 3;
+	const delayRetry = 5000;
+	const fnCreatePhantom = function(phantomCfg, startURL, callback) {
 		countTry++;
-		let fnRetry = function() {
+		const fnRetry = function() {
 			if (countTry < maxCountTry) {
 				_utils.logD('Retry create phantom:', countTry);
 				fnCreatePhantom(phantomCfg, startURL, callback);
@@ -69,7 +69,6 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				};
 				page.onConsoleMessage = function(msg, lineNum, sourceId) {
 					if (process.env.PORT) return;
-					/**/
 					_utils.logD('CONSOLE: ' + msg);
 				};
 				page.onLoadFinished = function(status) {
@@ -79,7 +78,6 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 					page.isLoading = true;
 				};
 				page.onClosing = function(closingPage) {
-					/**/
 					_utils.logD('The page is closing!', closingPage);
 					if (page.multiPage) return;
 					phantom.exit();
@@ -387,7 +385,7 @@ PhantomHelper.clickNaEx = function(page, query, options, isWait, fnCallback) {
 }
 
 PhantomHelper.getVal = function(page, queries, fnCallback) {
-	let SPLIT = '>>';
+	const SPLIT = '>>';
 	if (typeof(queries) == 'string') queries = [queries];
 	if (queries.length < 1) return fnCallback('Queries are not valid array');
 	let results = {};
@@ -550,7 +548,6 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 	let testForSelector = function() {
 		let elapsedTime = Date.now() - startTime;
 		if (elapsedTime > maxTimeOutMillis) {
-			/**/
 			_utils.logD('Timeout waiting for ifn_Condition');
 			return fnCallback('Timeout waiting for ifn_Condition', null);
 		}
@@ -570,7 +567,6 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 						return count < ifn_Condition.length;
 					}, function(fnWhilst) {
 						let argsCond = PhantomHelper.buildFnCondition(ifn_Condition[count]);
-						/**/
 						_utils.logD('fnCond', ifn_Condition[count], argsCond);
 						let fnEvalCb = function(err, res) {
 							count++;
@@ -614,7 +610,6 @@ PhantomHelper.waitPageLoaded = function(page, timeOutMillis, maxTimeOutMillis, c
 			}
 			if (countFinishRes++ < _cfgPH.maxTryFinishRes) return;
 			waitDone = true;
-			/**/
 			_utils.logD('wait finished in ', deltaTime, ' ms');
 		}
 		if (waitDone) {
