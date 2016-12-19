@@ -1,15 +1,16 @@
-var _wait = require('wait.for');
-var _ph = require('./PhantomHelper');
-
+'use strict';
+const _w = require('wait.for-es6');
+const _ph = require('./ph');
 
 /********** FLOW FUNCTIONS **********/
-var run = function (page) {
-	_wait.for(_ph.render, page, 'res.jpg');
-	_wait.for(page.close);
-}
+function* run() {
+	let page = yield [_ph.createPage, phConfig, 'https://www.whatismyip.com/'];
+	yield [_ph.render, page, 'res.jpg'];
+	yield [page.close]
+};
 
 /********** MAIN FUNCTIONS **********/
-var phConfig = {
+const phConfig = {
 	phantomOpt: {
 		parameters: {
 			'ignore-ssl-errors': 'yes',
@@ -34,8 +35,5 @@ var phConfig = {
 	isDebug: 1
 };
 
-_ph.createPage(phConfig, 'https://www.whatismyip.com/', function (err, page) {
-	console.log('createPage done', err);
-	_wait.launchFiber(run, page);
-});
 
+_w.launchFiber(run);

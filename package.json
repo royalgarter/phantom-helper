@@ -1,35 +1,35 @@
 {
-  "author": {
-    "name": "Tung Pham Thanh",
-    "url": "royalgarter@gmail.com"
-  },
-  "name": "phantom-helper",
-  "description": "Helper for PhantomJS with Node.js with plenty of handy functions",
-  "version": "2.1.2",
-  "homepage": "https://github.com/royalgarter/phantom-helper",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/royalgarter/phantom-helper.git"
-  },
-  "main": "PhantomHelper.js",
-  "scripts": {
-    "test": "./test"
-  },
-  "dependencies": {
-    "node-phantom-simple": "2.0.6"
-  },
-  "devDependencies": {
-    "wait.for": "*"
-  },
-  "optionalDependencies": {},
-  "engines": {
-    "node": "*"
-  },
-  "readme": "",
-  "readmeFilename": "README.md",
-  "bugs": {
-    "url": "https://github.com/royalgarter/phantom-helper/issues"
-  },
-  "_id": "phantom-helper@2.1.2",
-  "_from": "phantom-helper@*"
+	"author": {
+		"name": "Tung Pham Thanh",
+		"url": "royalgarter@gmail.com"
+	},
+	"name": "phantom-helper",
+	"description": "Helper for PhantomJS with Node.js with plenty of handy functions",
+	"version": "3.0.1",
+	"homepage": "https://github.com/royalgarter/phantom-helper",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/royalgarter/phantom-helper.git"
+	},
+	"main": "ph.js",
+	"scripts": {
+		"test": "./test.js"
+	},
+	"dependencies": {
+		"node-phantom-simple": "2.*"
+	},
+	"devDependencies": {
+		"wait.for-es6": "0.1.*"
+	},
+	"optionalDependencies": {},
+	"engines": {
+		"node": "*"
+	},
+	"readme": "",
+	"readmeFilename": "README.md",
+	"bugs": {
+		"url": "https://github.com/royalgarter/phantom-helper/issues"
+	},
+	"_id": "phantom-helper@2.1.2",
+	"_from": "phantom-helper@*"
 }
