@@ -1,7 +1,7 @@
 'use strict';
 const _phantomjs = require('node-phantom-simple');
 const _fs = require('fs');
-const _utils = require('./utils/Utils');
+const _utils = require('./utils/utils');
 const _hook = require('./utils/hook_stdout');
 
 const CRITICAL_ERRORS = ['Request() error evaluating open()', 'Error: read ECONNRESET']
