@@ -6,6 +6,7 @@ const _ph = require('./ph');
 function* run() {
 	let page = yield [_ph.createPage, phConfig, 'https://www.whatismyip.com/'];
 	yield [_ph.render, page, 'res.jpg'];
+	yield [_ph.waitForCondition, page, '#ip-box']
 	yield [page.close]
 };
 
@@ -14,7 +15,7 @@ const phConfig = {
 	phantomOpt: {
 		parameters: {
 			'ignore-ssl-errors': 'yes',
-			'load-images': 'no',
+			'load-images': 'yes',
 			'ssl-protocol': 'tlsv1',
 			'disk-cache': 'no',
 			'proxy-type': 'none'
@@ -34,6 +35,5 @@ const phConfig = {
 	isMiniRender: 1,
 	isDebug: 1
 };
-
 
 _w.launchFiber(run);

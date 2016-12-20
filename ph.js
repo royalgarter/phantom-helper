@@ -1,25 +1,26 @@
 'use strict';
 const _phantomjs = require('node-phantom-simple');
 const _fs = require('fs');
-const _utils = require('./utils/util.js');
+
+const _u = require('./utils/util.js');
 const _hook = require('./utils/hook_stdout.js');
 
 const CRITICAL_ERRORS = ['Request() error evaluating open()', 'Error: read ECONNRESET'];
 const ERR_ARGS = 'Not enough arguments';
 
-let _cfgPH = require('./config/ph.json');
+let _cfg = require('./config/ph.json');
 
 const PhantomHelper = {};
 module.exports = PhantomHelper;
 
 PhantomHelper.createDefaultPage = function(startURL, callback) {
-	return PhantomHelper.createPage(_cfgPH, startURL, callback);
+	return PhantomHelper.createPage(_cfg, startURL, callback);
 }
 
 PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
-	_utils.isDebug = phantomCfg.isDebug;
-	_utils.logD(phantomCfg);
-	_cfgPH = phantomCfg;
+	_u.isDebug = phantomCfg.isDebug;
+	_u.logD(phantomCfg);
+	_cfg = phantomCfg;
 	let countTry = 0;
 	const maxCountTry = 3;
 	const delayRetry = 5000;
@@ -27,7 +28,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 		countTry++;
 		const fnRetry = function() {
 			if (countTry < maxCountTry) {
-				_utils.logD('Retry create phantom:', countTry);
+				_u.logD('Retry create phantom:', countTry);
 				fnCreatePhantom(phantomCfg, startURL, callback);
 			} else {
 				callback('Cannot create phantom browser & page');
@@ -36,14 +37,15 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 
 		return _phantomjs.create(phantomCfg.phantomOpt || phantomCfg, function(err, phantom) {
 			if (err) {
-				_utils.logD('Cannot create phantom browser:', err);
+				_u.logD('Cannot create phantom browser:', err);
 				setTimeout(fnRetry, delayRetry);
 				return;
 			}
 			PhantomHelper.phantom = phantom;
-			phantom.createPage(function(err, page) {
+			
+			return phantom.createPage(function(err, page) {
 				if (err) {
-					_utils.logD('Cannot create phantom page:', err);
+					_u.logD('Cannot create phantom page:', err);
 					phantom.exit();
 					setTimeout(fnRetry, delayRetry);
 					return;
@@ -71,7 +73,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				};
 				page.onConsoleMessage = function(msg, lineNum, sourceId) {
 					if (process.env.PORT) return;
-					_utils.logD('CONSOLE: ' + msg);
+					_u.logD('CONSOLE: ' + msg);
 				};
 				page.onLoadFinished = function(status) {
 					page.isLoading = false;
@@ -80,12 +82,12 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 					page.isLoading = true;
 				};
 				page.onClosing = function(closingPage) {
-					_utils.logD('The page is closing!', closingPage);
+					_u.logD('The page is closing!', closingPage);
 					if (page.multiPage) return;
 					phantom.exit();
 				};
 				page.onError = function(msg, trace) {
-					let msgStack = ['PHANTOM internal page.onError: ' + msg];
+					var msgStack = ['PHANTOM internal page.onError: ' + msg];
 					if (trace && trace.length) {
 						msgStack.push('TRACE:');
 						trace.forEach(function(t) {
@@ -94,20 +96,20 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 					}
 				};
 				process.on('SIGTERM', function() {
-					_utils.logD('SIGTERM on PhantomHelper');
+					_u.logD('SIGTERM on PhantomHelper');
 					phantom.exit();
 				});
 				process.on('uncaughtException', function(err) {
-					_utils.logD('Caught exception: ' + err);
+					_u.logD('Caught exception: ' + err);
 				});
 				_hook.setup(function(string, encoding, fd) {
 					if (string.length <= 0 || string.includes('STDOUT')) return;
-					for (let crit_err of CRITICAL_ERRORS)
+					for (var crit_err of CRITICAL_ERRORS)
 						if (string.includes(crit_err)) return process.exit(1);
 				});
-				_utils.logD('Preparing phantom page done');
+				_u.logD('Preparing phantom page done');
 				try {
-					_utils.logD('Openning:', startURL);
+					_u.logD('Openning:', startURL);
 					if (phantomCfg.settings) {
 						page.set('settings', phantomCfg.settings, function(err, res) {});
 					}
@@ -149,9 +151,9 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 							};
 						}
 						return page.open(startURL, function(err, status) {
-							_utils.logD('Openned:', err, status);
+							_u.logD('Openned:', err, status);
 							if (err || status == 'fail') {
-								_utils.logD('Cannot open phantom page:', startURL, err);
+								_u.logD('Cannot open phantom page:', startURL, err);
 								phantom.exit();
 								setTimeout(fnRetry, delayRetry);
 								return;
@@ -163,7 +165,7 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 						});
 					}, 1000);
 				} catch (ex) {
-					_utils.logD('Cannot open phantom page:', startURL, ex);
+					_u.logD('Cannot open phantom page:', startURL, ex);
 					phantom.exit();
 					setTimeout(fnRetry, delayRetry);
 				}
@@ -176,27 +178,27 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 PhantomHelper.render = function(page, filepath, fnCallback, isForceRender) {
 	try {
 		if (!isForceRender) {
-			if (!_cfgPH.isDebugRender && (process.env.RENDER == undefined || !process.env.RENDER)) {
-				if (_utils.isFunc(fnCallback)) return fnCallback(null);
+			if (!_cfg.isDebugRender && (process.env.RENDER == undefined || !process.env.RENDER)) {
+				if (_u.isFunc(fnCallback)) return fnCallback(null);
 			}
 		}
 		page.get('content', function(err, res) {
 			if (err || !res) return fnCallback && fnCallback(null);
-			if (_cfgPH.isMiniRender) {
+			if (_cfg.isMiniRender) {
 				res = res.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
 			}
-			let htmlFilepath = filepath.replace('.jpg', '').replace('.png', '').replace('.bmp', '') + '.html';
+			const htmlFilepath = filepath.replace('.jpg', '').replace('.png', '').replace('.bmp', '') + '.html';
 			_fs.writeFileSync(htmlFilepath, res);
 			page.render(filepath, function(err) {
 				if (err != null) {
-					_utils.logD('Render error:' + filepath, err);
+					_u.logD('Render error:' + filepath, err);
 				}
-				if (_utils.isFunc(fnCallback)) return fnCallback(null);
+				if (_u.isFunc(fnCallback)) return fnCallback(null);
 			});
 		});
 	} catch (ex) {
-		_utils.logD('RENDER EX:', ex);
-		if (_utils.isFunc(fnCallback)) return fnCallback(null);
+		_u.logD('RENDER EX:', ex);
+		if (_u.isFunc(fnCallback)) return fnCallback(null);
 	}
 }
 
@@ -212,8 +214,8 @@ PhantomHelper.doWaitCond = function(page, fnInject, ifn_Condition, callback) {
 	const args = [].splice.call(arguments, 0, arguments.length);
 	const ifn_args = args.splice(ARG_LEN - 1, args.length - ARG_LEN);
 	const fnEvalCb = function(err, result) {
-		_utils.handle(err);
-		if (_utils.isUnDefOrNull(ifn_Condition)) return PhantomHelper.waitPageLoaded(page, function(err) {
+		_u.handle(err);
+		if (_u.isUnDefOrNull(ifn_Condition)) return PhantomHelper.waitPageLoaded(page, function(err) {
 			return fnCallback(err, result);
 		});
 		else return PhantomHelper.waitForCondition(page, ifn_Condition, function(err) {
@@ -251,7 +253,7 @@ PhantomHelper.waitDoCond = function(page, fnInject, ifn_Condition, callback) {
 	let evalArgs = [fnInject];
 	evalArgs = evalArgs.concat(ifn_args);
 	evalArgs.push(fnCallback);
-	if (_utils.isUnDefOrNull(ifn_Condition)) PhantomHelper.waitPageLoaded(page, function() {
+	if (_u.isUnDefOrNull(ifn_Condition)) PhantomHelper.waitPageLoaded(page, function() {
 		page.evaluate.apply(page, evalArgs);
 	});
 	else PhantomHelper.waitForCondition(page, ifn_Condition, function() {
@@ -260,16 +262,16 @@ PhantomHelper.waitDoCond = function(page, fnInject, ifn_Condition, callback) {
 }
 
 PhantomHelper.click = function(page, query, index, isWait, fnCallback) {
-	if (!_utils.isStr(query)) {
+	if (!_u.isStr(query)) {
 		let err = 'Click failed, query argument is not string!'
 		return fnCallback(err);
 	}
-	if (_utils.isFunc(index)) {
+	if (_u.isFunc(index)) {
 		fnCallback = index;
 		index = 0;
 		isWait = 0;
 	}
-	if (_utils.isFunc(isWait)) {
+	if (_u.isFunc(isWait)) {
 		fnCallback = isWait;
 		isWait = 0;
 	}
@@ -287,7 +289,7 @@ PhantomHelper.click = function(page, query, index, isWait, fnCallback) {
 			});
 		} else {
 			let err = 'Click failed, ' + query + ' not found!'
-			_utils.logD(err);
+			_u.logD(err);
 			if (!isWait) return fnCallback(err, result);
 			PhantomHelper.waitPageLoaded(page, function() {
 				fnCallback(err, result);
@@ -297,11 +299,11 @@ PhantomHelper.click = function(page, query, index, isWait, fnCallback) {
 }
 
 PhantomHelper.clickEx = function(page, query, isWait, fnCallback) {
-	if (!_utils.isStr(query)) {
+	if (!_u.isStr(query)) {
 		let err = 'Click failed, query argument is not string!'
 		return fnCallback(err);
 	}
-	if (_utils.isFunc(isWait)) {
+	if (_u.isFunc(isWait)) {
 		fnCallback = isWait;
 		isWait = 0;
 	}
@@ -321,7 +323,7 @@ PhantomHelper.clickEx = function(page, query, isWait, fnCallback) {
 			});
 		} else {
 			let err = 'Click failed, ' + query + ' not found!'
-			_utils.logD(err);
+			_u.logD(err);
 			if (!isWait) return fnCallback(err, result);
 			PhantomHelper.waitPageLoaded(page, function() {
 				fnCallback(err, result);
@@ -331,11 +333,11 @@ PhantomHelper.clickEx = function(page, query, isWait, fnCallback) {
 }
 
 PhantomHelper.clickNaEx = function(page, query, options, isWait, fnCallback) {
-	if (!_utils.isStr(query)) {
+	if (!_u.isStr(query)) {
 		let err = 'Click failed, query argument is not string!'
 		return fnCallback(err);
 	}
-	if (_utils.isFunc(isWait)) {
+	if (_u.isFunc(isWait)) {
 		fnCallback = isWait;
 		isWait = 0;
 	}
@@ -344,7 +346,7 @@ PhantomHelper.clickNaEx = function(page, query, options, isWait, fnCallback) {
 	options.dy = options.dy ? options.dy : 0;
 	options.type = options.type ? options.type : 'left';
 	page.evaluate(function(fnQueryStr, query) {
-		const getOffsetRect = function(elem) {
+		var getOffsetRect = function(elem) {
 			if (!elem) return null;
 			var box = elem.getBoundingClientRect();
 			var body = document.body;
@@ -377,7 +379,7 @@ PhantomHelper.clickNaEx = function(page, query, options, isWait, fnCallback) {
 			});
 		} else {
 			let err = 'Click failed, ' + query + ' not found!'
-			_utils.logD(err);
+			_u.logD(err);
 			if (!isWait) return fnCallback(err, result);
 			return PhantomHelper.waitPageLoaded(page, function() {
 				fnCallback(err, result);
@@ -479,7 +481,7 @@ PhantomHelper.getVal = function(page, queries, fnCallback) {
 }
 
 PhantomHelper.fill = function(page, query, index, value, fnCallback) {
-	if (!_utils.isStr(query)) {
+	if (!_u.isStr(query)) {
 		let err = 'Fill failed, query argument is not string!'
 		return fnCallback(err);
 	}
@@ -492,14 +494,14 @@ PhantomHelper.fill = function(page, query, index, value, fnCallback) {
 			return fnCallback(err, result);
 		} else {
 			let err = 'Fill failed, ' + query + ' not found!'
-			_utils.logD(err);
+			_u.logD(err);
 			return fnCallback(err, result);
 		}
 	});
 }
 
 PhantomHelper.fillEx = function(page, query, value, fnCallback) {
-	if (!_utils.isStr(query)) {
+	if (!_u.isStr(query)) {
 		let err = 'Fill failed, query argument is not string!'
 		return fnCallback(err);
 	}
@@ -514,7 +516,7 @@ PhantomHelper.fillEx = function(page, query, value, fnCallback) {
 			return fnCallback(err, result);
 		} else {
 			let err = 'Fill failed, ' + query + ' not found!'
-			_utils.logD(err);
+			_u.logD(err);
 			return fnCallback(err, result);
 		}
 	});
@@ -525,7 +527,7 @@ PhantomHelper.upload = function(page, query, filepath, fnCallback) {
 }
 
 PhantomHelper.waitForConditionSafe = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback) {
-	let fnCallback = arguments.length > 2 ? arguments[arguments.length - 1] : null;
+	const fnCallback = arguments.length > 2 ? arguments[arguments.length - 1] : null;
 	return PhantomHelper.waitForCondition(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, function(err, result) {
 		return fnCallback(null, {
 			err: err,
@@ -535,27 +537,30 @@ PhantomHelper.waitForConditionSafe = function(page, ifn_Condition, timeoutInterv
 }
 
 PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback) {
-	let fnCallback = arguments.length > 2 ? arguments[arguments.length - 1] : null;
-	let startTime = Date.now();
-	timeoutInterval = _utils.isNum(timeoutInterval) ? timeoutInterval : _cfgPH.timeInterval;
-	maxTimeOutMillis = _utils.isNum(maxTimeOutMillis) ? maxTimeOutMillis : _cfgPH.maxTimeOutMillis;
-	let fnHandle = function(err, result) {
+	const fnCallback = arguments.length > 2 ? arguments[arguments.length - 1] : null;
+	const startTime = Date.now();
+	
+	timeoutInterval = _u.isNum(timeoutInterval) ? timeoutInterval : _cfg.timeInterval;
+	maxTimeOutMillis = _u.isNum(maxTimeOutMillis) ? maxTimeOutMillis : _cfg.maxTimeOutMillis;
+	
+	const fnHandle = function(err, result) {
 		if (result) {
-			_utils.logD('wait finished in', Date.now() - startTime, 'ms');
+			_u.logD('wait finished in', Date.now() - startTime, 'ms');
 			fnCallback(err, result);
 		} else {
 			setTimeout(testForSelector, timeoutInterval);
 		}
 	}
-	let testForSelector = function() {
-		let elapsedTime = Date.now() - startTime;
+	
+	const testForSelector = function() {
+		const elapsedTime = Date.now() - startTime;
 		if (elapsedTime > maxTimeOutMillis) {
-			_utils.logD('Timeout waiting for ifn_Condition');
+			_u.logD('Timeout waiting for ifn_Condition');
 			return fnCallback('Timeout waiting for ifn_Condition', null);
 		}
 		switch (typeof(ifn_Condition)) {
 			case 'string':
-				let argsCond = PhantomHelper.buildFnCondition(ifn_Condition);
+				const argsCond = PhantomHelper.buildFnCondition(ifn_Condition);
 				argsCond.push(fnHandle);
 				page.evaluate.apply(page, argsCond);
 				break;
@@ -568,9 +573,9 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 					_async.whilst(function() {
 						return count < ifn_Condition.length;
 					}, function(fnWhilst) {
-						let argsCond = PhantomHelper.buildFnCondition(ifn_Condition[count]);
-						_utils.logD('fnCond', ifn_Condition[count], argsCond);
-						let fnEvalCb = function(err, res) {
+						const argsCond = PhantomHelper.buildFnCondition(ifn_Condition[count]);
+						_u.logD('fnCond', ifn_Condition[count], argsCond);
+						const fnEvalCb = function(err, res) {
 							count++;
 							if (err || !res) fnWhilst(ifn_Condition[count]);
 							fnWhilst(null);
@@ -593,10 +598,10 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 }
 
 PhantomHelper.waitPageLoaded = function(page, timeOutMillis, maxTimeOutMillis, callback) {
-	let fnCallback = arguments.length > 1 ? arguments[arguments.length - 1] : null;
-	timeOutMillis = _utils.isNum(timeOutMillis) ? timeOutMillis : _cfgPH.timeOutMillis;
-	maxTimeOutMillis = _utils.isNum(maxTimeOutMillis) ? maxTimeOutMillis : _cfgPH.maxTimeOutMillis;
-	let start = new Date().getTime();
+	const fnCallback = arguments.length > 1 ? arguments[arguments.length - 1] : null;
+	timeOutMillis = _u.isNum(timeOutMillis) ? timeOutMillis : _cfg.timeOutMillis;
+	maxTimeOutMillis = _u.isNum(maxTimeOutMillis) ? maxTimeOutMillis : _cfg.maxTimeOutMillis;
+	const start = new Date().getTime();
 	let countFinishRes = 0;
 	let interval = setInterval(function() {
 		let deltaTime = new Date().getTime() - start;
@@ -604,32 +609,32 @@ PhantomHelper.waitPageLoaded = function(page, timeOutMillis, maxTimeOutMillis, c
 		let err = null;
 		if (deltaTime > maxTimeOutMillis) {
 			waitDone = true;
-			_utils.logD('wait too long in ' + deltaTime + ' ms, ' + page.countRes + ' resources remained');
+			_u.logD('wait too long in ' + deltaTime + ' ms, ' + page.countRes + ' resources remained');
 		} else if (deltaTime > timeOutMillis) {
 			if (page.isLoading == true || page.countRes > 0) {
 				countFinishRes = 0;
 				return;
 			}
-			if (countFinishRes++ < _cfgPH.maxTryFinishRes) return;
+			if (countFinishRes++ < _cfg.maxTryFinishRes) return;
 			waitDone = true;
-			_utils.logD('wait finished in ', deltaTime, ' ms');
+			_u.logD('wait finished in ', deltaTime, ' ms');
 		}
 		if (waitDone) {
 			clearInterval(interval);
 			countFinishRes = 0;
 			page.countRes = 0;
 			page.isLoading = false;
-			if (_utils.isFunc(fnCallback)) return fnCallback(err);
+			if (_u.isFunc(fnCallback)) return fnCallback(err);
 			else return fnCallback;
 		}
-	}, _cfgPH.timeInterval);
+	}, _cfg.timeInterval);
 }
 
 /***************************** SUPPORT FUNCTIONS *******************************/
 
 PhantomHelper.buildFnCondition = function(strCond) {
-	let SPLIT = '>>';
-	let words = strCond.split(SPLIT);
+	const SPLIT = '>>';
+	const words = strCond.split(SPLIT);
 	let len = words.length;
 	let count = 0;
 	let qSelector, qIdx, qAttribute, qRegex;
@@ -637,7 +642,8 @@ PhantomHelper.buildFnCondition = function(strCond) {
 	if (len > count) qIdx = parseInt(words[count++]);
 	if (len > count) qAttribute = words[count++];
 	if (len > count) qRegex = words[count++];
-	let fnCond = function(qSelector, qIdx, qAttribute, qRegex) {
+	
+	const fnCond = function(qSelector, qIdx, qAttribute, qRegex) {
 		try {
 			if (!(typeof qSelector === 'undefined' || qSelector == null)) {
 				qSelector = qSelector.toString();
@@ -651,7 +657,7 @@ PhantomHelper.buildFnCondition = function(strCond) {
 				qIdx = parseInt(qIdx);
 				if (document.querySelectorAll(qSelector).length > qIdx && !document.querySelectorAll(qSelector)[qIdx]) return false;
 			}
-			let attr = null;
+			var attr = null;
 			if (!(typeof qAttribute === 'undefined' || qAttribute == null)) {
 				qAttribute = qAttribute.toString();
 				switch (qAttribute) {
@@ -673,17 +679,17 @@ PhantomHelper.buildFnCondition = function(strCond) {
 		}
 	}
 
-	_utils.logD('CONDITION', qSelector, qIdx, qAttribute, qRegex);
+	// _u.logD('CONDITION', qSelector, qIdx, qAttribute, qRegex);
 	return [fnCond, qSelector, qIdx, qAttribute, qRegex];
 }
 
 PhantomHelper.exQuerySelectorAll = function(queryStr) {
 	if (!queryStr || queryStr.length < 1) return null;
-	let words = queryStr.split(':eq(');
-	let ptr = document.querySelectorAll(words[0]);
+	var words = queryStr.split(':eq(');
+	var ptr = document.querySelectorAll(words[0]);
 	if (words.length < 2) return ptr[0];
-	for (let i = 1; i < words.length; i++) {
-		let eles = words[i].split(')');
+	for (var i = 1; i < words.length; i++) {
+		var eles = words[i].split(')');
 		if (eles.length > 0) ptr = ptr[eles[0]];
 		if (eles.length > 1 && eles[1]) ptr = ptr.querySelectorAll(eles[1].trim());
 	};

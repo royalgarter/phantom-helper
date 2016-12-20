@@ -5,7 +5,7 @@
 	},
 	"name": "phantom-helper",
 	"description": "Helper for PhantomJS with Node.js with plenty of handy functions",
-	"version": "3.0.1",
+	"version": "3.0.2",
 	"homepage": "https://github.com/royalgarter/phantom-helper",
 	"repository": {
 		"type": "git",
