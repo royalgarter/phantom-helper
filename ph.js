@@ -526,10 +526,25 @@ PhantomHelper.upload = function(page, query, filepath, fnCallback) {
 	return page.upload(query, filepath, fnCallback);
 }
 
+PhantomHelper.wait = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback) {
+	if (arguments.length == 2)
+		return PhantomHelper.waitPageLoaded(page, arguments[arguments.length - 1]);
+
+	if (~['function', 'string', 'object'].indexOf(typeof ifn_Condition) ) {
+		return PhantomHelper.waitForConditionSafe(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback);
+	}
+
+	if (typeof ifn_Condition == 'number') {
+		return PhantomHelper.waitPageLoaded(page, ifn_Condition, ifn_Condition * 2, fnCallback);
+	}
+
+	return PhantomHelper.waitPageLoaded(page, timeOutMillis, maxTimeOutMillis, callback);
+}
+
 PhantomHelper.waitForConditionSafe = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback) {
 	const fnCallback = arguments.length > 2 ? arguments[arguments.length - 1] : null;
 	return PhantomHelper.waitForCondition(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, function(err, result) {
-		return fnCallback(null, {
+		return fnCallback && fnCallback(null, {
 			err: err,
 			result: result
 		});
@@ -546,7 +561,7 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 	const fnHandle = function(err, result) {
 		if (result) {
 			_u.logD('wait finished in', Date.now() - startTime, 'ms');
-			fnCallback(err, result);
+			fnCallback && fnCallback(err, result);
 		} else {
 			setTimeout(testForSelector, timeoutInterval);
 		}
@@ -556,7 +571,7 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 		const elapsedTime = Date.now() - startTime;
 		if (elapsedTime > maxTimeOutMillis) {
 			_u.logD('Timeout waiting for ifn_Condition');
-			return fnCallback('Timeout waiting for ifn_Condition', null);
+			return fnCallback && fnCallback('Timeout waiting for ifn_Condition', null);
 		}
 		switch (typeof(ifn_Condition)) {
 			case 'string':
@@ -584,14 +599,14 @@ PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, 
 						page.evaluate.apply(page, argsCond);
 					}, function(err) {
 						if (err) return setTimeout(testForSelector, timeoutInterval);
-						return fnCallback(null);
+						return fnCallback && fnCallback(null);
 					});
 				} else {
-					fnCallback('ifn_Condition is invalid', null);
+					fnCallback && fnCallback('ifn_Condition is invalid', null);
 				}
 				break;
 			default:
-				fnCallback('ifn_Condition is invalid', null);
+				fnCallback && fnCallback('ifn_Condition is invalid', null);
 		}
 	};
 	setTimeout(testForSelector, timeoutInterval);
