@@ -110,10 +110,16 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 				_u.logD('Preparing phantom page done');
 				try {
 					_u.logD('Openning:', startURL);
+					if (phantomCfg.userAgent) {
+						_u.logD('settings.userAgent', phantomCfg.userAgent);
+						page.set('settings.userAgent', phantomCfg.userAgent, function(err, res) {});
+					}
 					if (phantomCfg.settings) {
+						_u.logD('settings', phantomCfg.settings);
 						page.set('settings', phantomCfg.settings, function(err, res) {});
 					}
 					if (phantomCfg.viewportSize) {
+						_u.logD('viewportSize', phantomCfg.viewportSize);
 						page.set('viewportSize', phantomCfg.viewportSize, function(err, res) {});
 					}
 					return setTimeout(function() {
@@ -182,6 +188,7 @@ PhantomHelper.render = function(page, filepath, fnCallback, isForceRender) {
 				if (_u.isFunc(fnCallback)) return fnCallback(null);
 			}
 		}
+
 		page.get('content', function(err, res) {
 			if (err || !res) return fnCallback && fnCallback(null);
 			if (_cfg.isMiniRender) {
