@@ -1,6 +1,7 @@
 'use strict';
 const _phantomjs = require('node-phantom-simple');
 const _fs = require('fs');
+const _async = require('async');
 
 const _u = require('./utils/util.js');
 const _hook = require('./utils/hook_stdout.js');
@@ -21,164 +22,217 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 	_u.isDebug = phantomCfg.isDebug;
 	_u.logD(phantomCfg);
 	_cfg = phantomCfg;
+	
 	let countTry = 0;
 	const maxCountTry = 3;
 	const delayRetry = 5000;
-	const fnCreatePhantom = function(phantomCfg, startURL, callback) {
+
+	(function fnCreatePhantom(phantomCfg, startURL, callback) {
 		countTry++;
-		const fnRetry = function() {
-			if (countTry < maxCountTry) {
+
+		const fnFailExit = function (err) {
+			_u.logD('Cannot open phantom page:', startURL, err);
+			
+			if (PhantomHelper.phantom) PhantomHelper.phantom.exit();
+			PhantomHelper.phantom = null;
+			
+			setTimeout(function() {
+				if (countTry >= maxCountTry)
+					return callback('Cannot create phantom browser & page');
+
 				_u.logD('Retry create phantom:', countTry);
-				fnCreatePhantom(phantomCfg, startURL, callback);
-			} else {
-				callback('Cannot create phantom browser & page');
-			}
+				return fnCreatePhantom(phantomCfg, startURL, callback);
+			}, delayRetry);
 		};
 
-		return _phantomjs.create(phantomCfg.phantomOpt || phantomCfg, function(err, phantom) {
-			if (err) {
-				_u.logD('Cannot create phantom browser:', err);
-				setTimeout(fnRetry, delayRetry);
-				return;
-			}
-			PhantomHelper.phantom = phantom;
-			
-			return phantom.createPage(function(err, page) {
-				if (err) {
-					_u.logD('Cannot create phantom page:', err);
-					phantom.exit();
-					setTimeout(fnRetry, delayRetry);
-					return;
-				}
-				page.countRes = 0;
-				page.isLoading = true;
-				page.multiPage = phantomCfg.multiPage;
+		try {
+			let page = null;
+			_async.series([
+				/*Create phantom & page*/function (next) {
+					return _phantomjs.create(phantomCfg.phantomOpt || phantomCfg, function(err, phantom) {
 
-				page.onResourceRequested = function(request, a) {
-					if (request.url.indexOf('.js') < 0) return;
-					page.countRes++;
-				};
-				page.onResourceReceived = function(response) {
-					if (response.url.indexOf('.js') < 0) return;
-					if (!response.stage || response.stage === 'end') {
-						page.countRes--;
-					}
-				};
-				page.onNavigationRequested = function(obj) {}
-				page.onResourceError = function(resourceError) {
-					page.countRes--;
-				};
-				page.onResourceTimeout = function(request) {
-					page.countRes--;
-				};
-				page.onConsoleMessage = function(msg, lineNum, sourceId) {
-					if (process.env.PORT) return;
-					_u.logD('CONSOLE: ' + msg);
-				};
-				page.onLoadFinished = function(status) {
-					page.isLoading = false;
-				};
-				page.onLoadStarted = function() {
+						if (err || !phantom) return next('phantomjs.create.err' + err);
+
+						PhantomHelper.phantom = phantom;
+						
+						return phantom.createPage(function(err, newPage) {
+							if (err || !newPage) return next('phantom.createPage.err' + err);
+
+							PhantomHelper.page = page = newPage;
+
+							return next();
+						});
+					});
+				},
+				/*Set up event emitter*/function (next) {
+					page.countRes = 0;
 					page.isLoading = true;
-				};
-				page.onClosing = function(closingPage) {
-					_u.logD('The page is closing!', closingPage);
-					if (page.multiPage) return;
-					phantom.exit();
-				};
-				page.onError = function(msg, trace) {
-					var msgStack = ['PHANTOM internal page.onError: ' + msg];
-					if (trace && trace.length) {
-						msgStack.push('TRACE:');
-						trace.forEach(function(t) {
-							msgStack.push(' -> ' + t.file + ': ' + t.line + (t.function ? ' (in function "' + t.function+'")' : ''));
-						});
-					}
-				};
-				process.on('SIGTERM', function() {
-					_u.logD('SIGTERM on PhantomHelper');
-					phantom.exit();
-				});
-				process.on('uncaughtException', function(err) {
-					_u.logD('Caught exception: ' + err);
-				});
-				_hook.setup(function(string, encoding, fd) {
-					if (string.length <= 0 || string.includes('STDOUT')) return;
-					for (var crit_err of CRITICAL_ERRORS)
-						if (string.includes(crit_err)) return process.exit(1);
-				});
-				_u.logD('Preparing phantom page done');
-				try {
-					_u.logD('Openning:', startURL);
-					if (phantomCfg.userAgent) {
-						_u.logD('settings.userAgent', phantomCfg.userAgent);
-						page.set('settings.userAgent', phantomCfg.userAgent, function(err, res) {});
-					}
-					if (phantomCfg.settings) {
-						_u.logD('settings', phantomCfg.settings);
-						page.set('settings', phantomCfg.settings, function(err, res) {});
-					}
-					if (phantomCfg.viewportSize) {
-						_u.logD('viewportSize', phantomCfg.viewportSize);
-						page.set('viewportSize', phantomCfg.viewportSize, function(err, res) {});
-					}
-					return setTimeout(function() {
-						let proxyRaw = phantomCfg.phantomOpt.parameters.proxy;
-						let proxy = proxyRaw;
-						if (proxyRaw) {
-							console.log('Proxies:', proxyRaw);
-							if (Array.isArray(proxyRaw)) {
-								let idx = Math.floor((Math.random() * proxyRaw.length));
-								proxy = proxyRaw[idx];
-							}
-							console.log('Using proxy:', proxy);
-							page.proxy = proxy;
-							let words = proxy.split(':');
-							if (words.length >= 2) {
-								let proxyAuth = phantomCfg.phantomOpt.parameters['proxy-auth'];
-								let username = '';
-								let password = '';
-								if (!proxyAuth && ~proxy.indexOf(':AUTH:')) {
-									proxyAuth = proxy.split(':AUTH:')[1];
-								}
-								if (proxyAuth) {
-									let auth = proxyAuth.split(':');
-									username = auth[0];
-									password = auth[1];
-								}
-								phantom.setProxy(words[0], words[1], 'http' || phantomCfg.phantomOpt.parameters['proxy-type'], username, password);
-							}
+					page.multiPage = phantomCfg.multiPage;
+
+					page.onResourceRequested = function(request, a) {
+						if (request.url.indexOf('.js') < 0) return;
+						page.countRes++;
+					};
+					page.onResourceReceived = function(response) {
+						if (response.url.indexOf('.js') < 0) return;
+						if (!response.stage || response.stage === 'end') {
+							page.countRes--;
 						}
-						let cookies = phantomCfg.cookies;
-						if (cookies && cookies.length > 0) {
-							console.log('Using cookies:', cookies);
-							for (let idx = 0; idx < cookies.length; idx++) {
-								phantom.addCookie(cookies[idx]);
-							};
-						}
-						return page.open(startURL, function(err, status) {
-							_u.logD('Openned:', err, status);
-							if (err || status == 'fail') {
-								_u.logD('Cannot open phantom page:', startURL, err);
-								phantom.exit();
-								setTimeout(fnRetry, delayRetry);
-								return;
-							}
-							if (phantomCfg.phantomOpt.parameters.noWait) return callback(null, page);
-							PhantomHelper.waitPageLoaded(page, function() {
-								return callback(null, page);
+					};
+					page.onResourceError = function(resourceError) {
+						page.countRes--;
+					};
+					page.onResourceTimeout = function(request) {
+						page.countRes--;
+					};
+					page.onConsoleMessage = function(msg, lineNum, sourceId) {
+						if (_u.isDebug) _u.logD('CONSOLE: ' + msg);
+					};
+					page.onLoadFinished = function(status) {
+						page.isLoading = false;
+					};
+					page.onLoadStarted = function() {
+						page.isLoading = true;
+					};
+					page.onClosing = function(closingPage) {
+						_u.logD('The page is closing!', closingPage);
+						if (page.multiPage) return;
+						PhantomHelper.phantom & PhantomHelper.phantom.exit();
+					};
+					page.onError = function(msg, trace) {
+						var msgStack = ['PHANTOM internal page.onError: ' + msg];
+						if (trace && trace.length) {
+							msgStack.push('TRACE:');
+							trace.forEach(function(t) {
+								msgStack.push(' -> ' + t.file + ': ' + t.line + (t.function ? ' (in function "' + t.function+'")' : ''));
 							});
-						});
-					}, 1000);
-				} catch (ex) {
-					_u.logD('Cannot open phantom page:', startURL, ex);
-					phantom.exit();
-					setTimeout(fnRetry, delayRetry);
+						}
+					};
+
+					return next();
+				},
+				/*Set up critical event handler*/function (next) {
+					process.on('SIGTERM', function() {
+						_u.logD('SIGTERM on PhantomHelper');
+						PhantomHelper.phantom & PhantomHelper.phantom.exit();
+					});
+
+					process.on('uncaughtException', function(err) {
+						_u.logD('Caught exception: ' + err);
+					});
+
+					_hook.setup(function(string, encoding, fd) {
+						if (string.length <= 0 || string.includes('STDOUT')) return;
+						for (let crit_err of CRITICAL_ERRORS) {
+							if (string.includes(crit_err)) return process.exit(1);
+						}
+					});
+
+					return next();
+				},
+				/*Init page.settings*/function (next) {
+					if (!phantomCfg.settings) return next();
+
+					page.set('settings', phantomCfg.settings, function(err, res) {
+						_u.logD('settings', phantomCfg.settings, err, res);
+						return next();
+					});
+				},
+				/*Init page.userAgent*/function (next) {
+					if (!phantomCfg.userAgent) return next();
+
+					page.set('settings.userAgent', phantomCfg.userAgent, function(err, res) {
+						_u.logD('settings.userAgent', phantomCfg.userAgent, err, res);
+						return next();
+					});
+				},
+				/*Init page.viewportSize*/function (next) {
+					if (!phantomCfg.viewportSize) return next();
+
+					page.set('viewportSize', phantomCfg.viewportSize, function(err, res) {
+						_u.logD('viewportSize', phantomCfg.viewportSize, err, res);
+						return next();
+					});
+				},
+				/*Init page.customHeaders*/function (next) {
+					if (!phantomCfg.customHeaders) return next();
+
+					page.set('customHeaders', phantomCfg.customHeaders, function(err, res) {
+						_u.logD('customHeaders', phantomCfg.customHeaders, err, res);
+						return next();
+					});
+				},
+				/*Init cookies*/function (next) {
+					if (!phantomCfg.cookies) return next();
+
+					let cookies = phantomCfg.cookies;
+					if (PhantomHelper.phantom && cookies && cookies.length > 0) {
+						_u.logD('Using cookies:', cookies);
+						for (let cookie of cookies) {
+							PhantomHelper.phantom.addCookie(cookie);
+						};
+					}
+					
+					return next();
+				},
+				/*Setup proxy*/function (next) {
+
+					if (!PhantomHelper.phantom 
+						|| !phantomCfg || !phantomCfg.phantomOpt 
+						|| !phantomCfg.phantomOpt.parameters 
+						|| !phantomCfg.phantomOpt.parameters.proxy) return next();
+
+					let proxyRaw = phantomCfg.phantomOpt.parameters.proxy;
+					let proxy = proxyRaw;
+					
+					console.log('Proxies:', proxyRaw);
+					if (Array.isArray(proxyRaw)) {
+						let idx = Math.floor((Math.random() * proxyRaw.length));
+						proxy = proxyRaw[idx];
+					}
+
+					console.log('Using proxy:', proxy);
+					page.proxy = proxy;
+					let words = proxy.split(':');
+					if (words.length >= 2) {
+						let proxyAuth = phantomCfg.phantomOpt.parameters['proxy-auth'];
+						let username = '';
+						let password = '';
+						if (!proxyAuth && ~proxy.indexOf(':AUTH:')) {
+							proxyAuth = proxy.split(':AUTH:')[1];
+						}
+						if (proxyAuth) {
+							let auth = proxyAuth.split(':');
+							username = auth[0];
+							password = auth[1];
+						}
+						
+						PhantomHelper.phantom.setProxy(words[0], words[1], 'http' || phantomCfg.phantomOpt.parameters['proxy-type'], username, password);
+					}
+
+					return next();
 				}
+			], function(err) {
+
+				if (err) return fnFailExit(err);
+				
+				_u.logD('Openning:', startURL);
+				return page.open(startURL, function(err, status) {
+					_u.logD('Openned:', err, status);
+				
+					if (err || status == 'fail') return fnFailExit(err);
+					
+					if (phantomCfg.phantomOpt.parameters.noWait) return callback(null, page);
+					
+					PhantomHelper.waitPageLoaded(page, function() {
+						return callback(null, page);
+					});
+				});
 			});
-		});
-	}
-	return fnCreatePhantom(phantomCfg, startURL, callback);
+		} catch (ex) {
+			return fnFailExit(ex);
+		}
+	})(phantomCfg, startURL, callback);
 }
 
 PhantomHelper.render = function(page, filepath, fnCallback, isForceRender) {
