@@ -4,10 +4,10 @@ const _fs = require('fs');
 const _async = require('async');
 
 const _u = require('./utils/util.js');
-const _hook = require('./utils/hook_stdout.js');
+// const _hook = require('./utils/hook_stdout.js');
 
-const CRITICAL_ERRORS = ['Request() error evaluating open()', 'Error: read ECONNRESET'];
-const ERR_ARGS = 'Not enough arguments';
+// const CRITICAL_ERRORS = ['Request() error evaluating open()', 'Error: read ECONNRESET'];
+// const ERR_ARGS = 'Not enough arguments';
 
 let _cfg = require('./config/ph.json');
 
@@ -121,12 +121,12 @@ PhantomHelper.createPage = function(phantomCfg, startURL, callback) {
 						_u.logD('Caught exception: ' + err);
 					});
 
-					_hook.setup(function(string, encoding, fd) {
+					/*_hook.setup(function(string, encoding, fd) {
 						if (string.length <= 0 || string.includes('STDOUT')) return;
 						for (let crit_err of CRITICAL_ERRORS) {
 							if (string.includes(crit_err)) return process.exit(1);
 						}
-					});
+					});*/
 
 					return next();
 				},
@@ -587,19 +587,18 @@ PhantomHelper.upload = function(page, query, filepath, fnCallback) {
 	return page.upload(query, filepath, fnCallback);
 }
 
-PhantomHelper.wait = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback) {
-	if (arguments.length == 2)
+PhantomHelper.wait = function(page, condition, callback) {
+
+	if (arguments.length == 2) // (page, callback)
 		return PhantomHelper.waitPageLoaded(page, arguments[arguments.length - 1]);
 
-	if (~['function', 'string', 'object'].indexOf(typeof ifn_Condition) ) {
-		return PhantomHelper.waitForConditionSafe(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback);
-	}
+	if (~['function', 'string', 'object'].indexOf(typeof condition) )
+		return PhantomHelper.waitForConditionSafe(page, condition, _cfg.timeInterval, _cfg.maxTimeOutMillis, callback);
 
-	if (typeof ifn_Condition == 'number') {
-		return PhantomHelper.waitPageLoaded(page, ifn_Condition, ifn_Condition * 2, fnCallback);
-	}
+	if (typeof condition == 'number')
+		return PhantomHelper.waitPageLoaded(page, condition, condition * 2, callback);
 
-	return PhantomHelper.waitPageLoaded(page, timeOutMillis, maxTimeOutMillis, callback);
+	return PhantomHelper.waitPageLoaded(page, _cfg.timeOutMillis, _cfg.maxTimeOutMillis, callback);
 }
 
 PhantomHelper.waitForConditionSafe = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback) {
@@ -714,6 +713,7 @@ PhantomHelper.buildFnCondition = function(strCond) {
 	let len = words.length;
 	let count = 0;
 	let qSelector, qIdx, qAttribute, qRegex;
+
 	if (len > count) qSelector = words[count++];
 	if (len > count) qIdx = parseInt(words[count++]);
 	if (len > count) qAttribute = words[count++];
@@ -759,7 +759,7 @@ PhantomHelper.buildFnCondition = function(strCond) {
 	return [fnCond, qSelector, qIdx, qAttribute, qRegex];
 }
 
-PhantomHelper.exQuerySelectorAll = function(queryStr) {
+PhantomHelper.exQuerySelectorAll = function(queryStr) { // ES5 inject function
 	if (!queryStr || queryStr.length < 1) return null;
 	var words = queryStr.split(':eq(');
 	var ptr = document.querySelectorAll(words[0]);
@@ -772,7 +772,7 @@ PhantomHelper.exQuerySelectorAll = function(queryStr) {
 	return ptr;
 }
 
-PhantomHelper.getOffsetRect = function(elem) {
+PhantomHelper.getOffsetRect = function(elem) { // ES5 inject function
 	var box = elem.getBoundingClientRect();
 	var body = document.body;
 	var docElem = document.documentElement;

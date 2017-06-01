@@ -1,16 +1,7 @@
 'use strict';
-const _w = require('wait.for-es6');
+const _sync = require('sync-es6');
 const _ph = require('./ph');
 
-/********** FLOW FUNCTIONS **********/
-function* run() {
-	let page = yield [_ph.createPage, phConfig, 'https://agenthub.jetstar.com/newtradeloginagent.aspx?culture=en-ZA'];
-	// yield [_ph.waitForCondition, page, '#ip-box'];
-	yield [_ph.render, page, 'res.jpg'];
-	yield [page.close];
-};
-
-/********** MAIN FUNCTIONS **********/
 const phConfig = {
 	phantomOpt: {
 		parameters: {
@@ -40,4 +31,14 @@ const phConfig = {
 	isDebug: 1
 };
 
-_w.launchFiber(run);
+_sync(function* () {
+	let page = yield [_ph.createPage, phConfig, 'https://agenthub.jetstar.com/newtradeloginagent.aspx?culture=en-ZA'];
+	console.log(1)
+	yield [_ph.render, page, 'res.jpg'];
+	yield [_ph.doWait, page, function () {console.log('NAVIGATOR.USERAGENT', navigator.userAgent);}];
+	yield [page.close];
+}, (err, resutl) => {
+
+});
+
+

@@ -2,9 +2,10 @@
 
 Rewrite most static functions for below purposes
 
-* Compatile with another sync libraries (with callback is the last arguments)
+* Compatile with another sync libraries (with callback is the last argument)
 * Add some handy function to wait for page loaded with ajax
-* Render both light-weight html and image for Debug
+* Render both light-weight html and image for Debugging
+
 
 # Prerequires: 
 
@@ -14,7 +15,7 @@ Rewrite most static functions for below purposes
 
 # Basic sample
 
-With Callback Hell
+* With Callback Hell
 
 ```
 var _ph = require('./PhantomHelper');
@@ -31,7 +32,7 @@ _ph.createDefaultPage('http://www.google.com', function (err, page) {
 
 ```
 
-Without Callback Hell using wait.for
+* Without Callback Hell using wait.for
 
 ```
 var _w = require('wait.for');
@@ -53,20 +54,20 @@ _ph.createDefaultPage('http://www.google.com', function (err, page) {
 
 # Functions
 
-* Create page (phantom instance) with an url
+### Create page (phantom instance) with an url
 
+```javascript
+PhantomHelper.createDefaultPage = function(startURL, callback) {}
+
+PhantomHelper.createPage = function(phantomHelperCfg, startURL, callback) {}
 ```
-PhantomHelper.createDefaultPage = function(startURL, callback)
 
-PhantomHelper.createPage = function(phantomHelperCfg, startURL, callback)
-```
-
-* phantom-helper configure
+### Configuration
 
 phantomOpt.parameters: is exactly the same as PhantomJs configure without '--'
 See more here: http://phantomjs.org/api/command-line.html
 
-```
+```javascript
 {   
 	"phantomOpt" : {		
 		"parameters": {
@@ -91,73 +92,94 @@ See more here: http://phantomjs.org/api/command-line.html
 ```
 
 
-* Render a page with both html content and image (for debugging)
+### Render a page with both html content and image (for debugging)
 
-```
-PhantomHelper.render = function(page, filepath, fnCallback, isForceRender)
+```javascript
+PhantomHelper.render = function(page, filepath, fnCallback, isForceRender) {}
 ```
 
-* Execute inject function to phantom
+### Execute inject function to phantom
 If you want to pass by the input arguments for fnInject, they should placed right before the last callback function
 
-```
+```javascript
 // execute inject function and wait for any AJAX
-PhantomHelper.doWait = function(page, fnInject, fnCallback)
+PhantomHelper.doWait = function(page, fnInject, fnCallback) {}
 
 // execute inject function and wait for any condition function
-PhantomHelper.doWaitCond = function(page, fnInject, ifn_Condition, callback)
+PhantomHelper.doWaitCond = function(page, fnInject, ifn_Condition, callback) {}
 
 // wait for any AJAX then execute inject function
-PhantomHelper.waitDo = function(page, fnInject, fnCallback)
+PhantomHelper.waitDo = function(page, fnInject, fnCallback) {}
 
 // wait for any condition function then execute inject function
-PhantomHelper.waitDoCond = function(page, fnInject, ifn_Condition, callback)
+PhantomHelper.waitDoCond = function(page, fnInject, ifn_Condition, callback) {}
 
 // execute inject function without waiting
-PhantomHelper.do = function(page, fnInject, callback)
+PhantomHelper.do = function(page, fnInject, callback) {}
 ```
 
-* Some handy overwrite function with support index when using document.querySelectorAll() in selector
-The "Ex" function support jQuery like selector with :eq(<index>) to clarify index of DOM
-The "clickNaEx" apply the native click (click at XY coordinate based on viewportSize). See more at: http://phantomjs.org/api/webpage/method/send-event.html
+### Some handy overwrite function with support index when using document.querySelectorAll() in selector
+
+
+```javascript
+PhantomHelper.fill = function(page, query, index, value, fnCallback) {}
+
+PhantomHelper.click = function(page, query, index, isWait, fnCallback) {}
+
+PhantomHelper.clickEx = function(page, query, isWait, fnCallback) {}
+// Support jQuery like selector with :eq(<index>) to clarify index of DOM
+
+PhantomHelper.clickNaEx = function(page, query, options/*(default null)*/, isWait, fnCallback) {}
+// Apply the native click (click at XY coordinate based on viewportSize). See more at: http://phantomjs.org/api/webpage/method/send-event.html
+
+PhantomHelper.fillEx = function(page, query, value, fnCallback) {}
+
+PhantomHelper.upload = function(page, query, filepath, fnCallback) {}
 
 ```
-PhantomHelper.click = function(page, query, index, isWait, fnCallback)
 
-PhantomHelper.fill = function(page, query, index, value, fnCallback)
+### Get value DOM value from page, queries should follow the below format
 
-PhantomHelper.clickEx = function(page, query, isWait, fnCallback)
-
-PhantomHelper.clickNaEx = function(page, query, options (default null), isWait, fnCallback)
-
-PhantomHelper.fillEx = function(page, query, value, fnCallback)
-
-PhantomHelper.upload = function(page, query, filepath, fnCallback)
-
-```
-
-* Get value DOM value from page, queries should follow the below format
-   Array: [query1, query2,... ,queryN]
-   or
-   Single string: queryStr
+* Array: [queryStr1, queryStr2, ... queryStrN]
+* Single string: queryStr
 
  Result is Hash object with queries as keys and their results as values
 
  Each query should be formatted as 'selector>>index>>attribute'.
  attribute is DOM attribute or 'text' for innerText and 'html' for innerHTML
 
- Example:
+ * Example:
     queries = '.a div span>>0>>text';
     queries = ['.a div span>>0>>text', '.tr div a>>0>>html'];
 
-```
-PhantomHelper.getVal = function(page, queries, fnCallback)
+```javascript
+PhantomHelper.getVal = function(page, queries, fnCallback) {}
 ```
 
-* Waiting functions that wait for page AJAX loaded or some specified condition. The 'timeoutInterval' and 'maxTimeOutMillis' could be ommitted to use the default value
+### Waiting functions that wait for AJAX loaded or specified condition
+* All the timeout could be ommitted to use the default value from config
 
+```javascript
+PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback) {}
+
+PhantomHelper.waitPageLoaded = function (page, timeOutMillis, maxTimeOutMillis, callback) {}
 ```
-PhantomHelper.waitForCondition = function(page, ifn_Condition, timeoutInterval, maxTimeOutMillis, callback)
 
-PhantomHelper.waitPageLoaded = function (page, timeOutMillis, maxTimeOutMillis, callback)
+### Super handy waiting function
+
+
+```javascript
+PhantomHelper.wait = function(page, condition, callback) {}
+
+/* 
+condition could be:
+* number: wait in ms
+* string: selector string, wait for that element existed
+* array: array of selector strings, wait for all elements existed
+* function: wait for that condition function return true
+
+If condition is omitted (page, callback), default waitPageLoaded will be called
+
+*/
+
 ```
